@@ -9,4 +9,3 @@ import sys
 def testNumpyImported():
     assert "numpy" in sys.modules
 
-testNumpyImported()

@@ -35,11 +35,11 @@ def testExperimentalMetaDataFormat():
     # let's repeat the same for the second row
     assert metadata[1] == []
 
-    # repeat for third row
+    # repeat for third row -
     row3Data = metadata[2][0].split(',')
     assert row3Data[1] == 'Type'
 
-    # repeat for fourth row
+    # repeat for fourth row - this should contain the location name of each sensor
     row4Data = metadata[3][0].split(',')
     assert row4Data[1] == 'Name'
 

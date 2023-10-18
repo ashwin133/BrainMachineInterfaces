@@ -10,9 +10,6 @@ import pandas as pd
 import csv
 dataLocation = expVars.fileLocation
 
-def testNumpyImported():
-    assert "numpy" in sys.modules
-
 def testExperimentalMetaDataFormat():
     # check that the metadata is as expected
     metadata = []

@@ -5,4 +5,4 @@ This project uses a set of cameras to locate markers/rigid bodies/skeletons in a
 
 Week 1 and 2 has focused on looking at possible ideas of where to take this project and learning to capture data for rigid bodies and markers. Week 3 is about learning to stream the data from optitrack for live visualisation and the image below shows how this will be tackled
 
-![image](images/DisplayingStreamedDataPlan.png)
+![image](Images/DisplayingStreamedDataPlan.png)

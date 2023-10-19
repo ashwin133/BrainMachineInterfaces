@@ -54,6 +54,5 @@ def extractDataFrameFromCSV(dataLocation):
 
   df = df.iloc[3:]
   df.columns = headerArray
-  print(df.head())
   df = df.astype(float)
   return df

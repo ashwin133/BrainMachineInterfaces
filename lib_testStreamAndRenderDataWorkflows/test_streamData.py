@@ -12,7 +12,7 @@ import os
 sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
 
 # import created packages
-from lib_streamAndRenderDataWorkflows.streamData import extractDataFrameFromCSV
+from lib_streamAndRenderDataWorkflows.streamData import *
 
 
 
@@ -33,7 +33,13 @@ def testExtractDataFrameFromCSV():
 
         assert df.shape == (1801,482)
 
+def testFetchLiveData():
+    with pytest.raises(Exception,match = "Simulated Dataframe data not provided but the fetch live data simulator is called"):
+        fetchLiveData(sharedMemoryLocation=None,simulate=True)
+    
+
 
 
 if __name__ == "__main__":
     testExtractDataFrameFromCSV()
+    testFetchLiveData()

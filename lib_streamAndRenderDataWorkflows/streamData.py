@@ -10,10 +10,14 @@ import pandas as pd
 
  
 
-def fetchLiveData(simulate = False):
+def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
     if simulate:
         # this will simulate the process of retrieving live data by retrieving the frame corresponding to the current timestamp 
-        pass 
+        if simulatedDF is None:
+            raise Exception("Simulated Dataframe data not provided but the fetch live data simulator is called")
+
+            # every nth of a second push a frame to shared memory
+            
     pass
 
 
@@ -30,6 +34,8 @@ def extractDataFrameFromCSV(dataLocation,includeCols = None):
     """
     @PARAM: dataLocation: relative path to csv data
     @PARAM: includeCols: Includes columns of a specific type, e.g. Bone, Bone Marker
+
+    RETURN: a dataframe 
     """
 
     # extract the experimental data onto a df, test file will check whether 

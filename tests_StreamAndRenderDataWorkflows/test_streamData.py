@@ -20,14 +20,15 @@ def testExtractDataFrameFromCSV():
     with pytest.warns(UserWarning):
         warnings.warn("DtypeWarning", UserWarning) # added as currently a warning about datatypes exist when importing csv
 
-        if os.getcwd() == '/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces':
+        try:
             dataLocation = "Data/charlie_suit_and_wand_demo.csv"
             df = extractDataFrameFromCSV(dataLocation= dataLocation)
-        elif os.getcwd() == '/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces/tests_StreamAndRenderDataWorkflows':
-            dataLocation = "../Data/charlie_suit_and_wand_demo.csv"
-            df = extractDataFrameFromCSV(dataLocation= dataLocation)
-        else:
-            raise Exception("Unusual working directory discovered, current directory is: {}".format(os.getcwd()))
+        except FileNotFoundError: # execute lines below if the file is being called from the directory it lies in
+            try:
+                dataLocation = "../Data/charlie_suit_and_wand_demo.csv"
+                df = extractDataFrameFromCSV(dataLocation= dataLocation)
+            except:
+                raise Exception("Unusual working directory discovered, current directory is: {}".format(os.getcwd()))
 
 
     #print(df)

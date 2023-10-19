@@ -22,16 +22,17 @@ def testExtractDataFrameFromCSV():
 
         try:
             dataLocation = "Data/charlie_suit_and_wand_demo.csv"
-            df = extractDataFrameFromCSV(dataLocation= dataLocation)
+            df = extractDataFrameFromCSV(dataLocation= dataLocation, includeCols='Charlie')
         except FileNotFoundError: # execute lines below if the file is being called from the directory it lies in
             try:
                 dataLocation = "../Data/charlie_suit_and_wand_demo.csv"
-                df = extractDataFrameFromCSV(dataLocation= dataLocation)
-            except:
+                df = extractDataFrameFromCSV(dataLocation= dataLocation,includeCols='Charlie')
+                print('')
+            except FileNotFoundError:
                 raise Exception("Unusual working directory discovered, current directory is: {}".format(os.getcwd()))
 
+        assert df.shape == (1801,482)
 
-    #print(df)
 
 
 if __name__ == "__main__":

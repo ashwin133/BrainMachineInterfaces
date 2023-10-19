@@ -11,13 +11,20 @@ import pandas as pd
  
 
 def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
+    """
+    This function is designed to run continuously in the background and simulates the client which fetches
+    data from motive and dumps it in shared memory.
+    """
     if simulate:
         # this will simulate the process of retrieving live data by retrieving the frame corresponding to the current timestamp 
         if simulatedDF is None:
             raise Exception("Simulated Dataframe data not provided but the fetch live data simulator is called")
 
             # every nth of a second push a frame to shared memory
-            
+
+    else: # functionality for fetching actual data off motive
+        pass 
+
     pass
 
 

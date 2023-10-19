@@ -16,14 +16,17 @@ sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/Gen
 # import my libraries
 from lib_streamAndRenderDataWorkflows import streamData, VisualiseLiveData
 
-# feed in location of csv data to extract dataframe
+# set what type of data to get e.g. Bone, Bone Marker
+typeData = "Bone Marker"
+
+# feed in location of csv data to extract dataframe 
 try:        
     dataLocation = "Data/Rishita-jumping jacks 2023-10-18.csv"
-    simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation)
+    simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation,includeCols='Bone Marker')
 except FileNotFoundError: # if file is run from location of file this is needed
     try:
         dataLocation = "Rishita-jumping jacks 2023-10-18.csv"
-        simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation)
+        simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone Marker')
     except:
         raise Exception('File not found')
     

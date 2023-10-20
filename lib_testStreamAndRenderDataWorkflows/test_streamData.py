@@ -38,8 +38,13 @@ def testFetchLiveData():
         fetchLiveData(sharedMemoryLocation=None,simulate=True)
     
 
-
+def testDefineSharedMemory():
+    sharedBlock,sharedArray = defineSharedMemory(sharedMemoryName= 'Motive Dump', dataType= "Bone Marker", noDataTypes= 25)
+    atexit.register(sharedBlock.close)
+    assert sharedArray.shape == (3,25)
+    print("Executed")
 
 if __name__ == "__main__":
     testExtractDataFrameFromCSV()
     testFetchLiveData()
+    testDefineSharedMemory()

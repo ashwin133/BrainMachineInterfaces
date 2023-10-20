@@ -3,11 +3,13 @@ This file contains the functionality to stream live data from the motive compute
 There is also functionality to simulate streaming data
 
 """
-
+# import python specific libraries
 import os
 import sys
 import pandas as pd
-
+import numpy as np
+from multiprocessing import shared_memory
+import atexit
  
 
 def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
@@ -28,8 +30,27 @@ def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
     pass
 
 
-def defineSharedMemory(sharedMemoryName = 'MotiveDump'):
-    pass
+def defineSharedMemory(sharedMemoryName = 'MotiveDump',dataType = 'Bone Marker',noDataTypes = 25):
+    """
+    Initialise shared memory
+
+    @PARAM: sharedMemoryName - name to initialise the shared memory
+    @PARAM: dataType - type of marker being looked at - e.g. Bone, Bone Marker
+    @PARAM: noDataTypes - number of each type of marker, e.g. if bone marker selected then in an
+    upper skeleton there are 25
+    """
+    varsPerDataType = None
+    if dataType == "Bone Marker":
+        varsPerDataType = 3 # doesn't have rotations, only x,y,z
+    elif dataType == "Bone":
+        varsPerDataType = 7 # 4 rotations and 3 positions
+    dataEntries = varsPerDataType * noDataTypes # calculate how many data entries needed for each timestamp
+
+    SHARED_MEM_NAME = sharedMemoryName
+    shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=True)
+    shared_array = np.ndarray(shape=(varsPerDataType,noDataTypes), dtype=np.float64, buffer=shared_block.buf)
+    atexit.register(shared_block.close)
+    return shared_block,shared_array
 
 def dumpFrameDataIntoSharedMemory():
     pass

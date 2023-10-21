@@ -52,8 +52,22 @@ def defineSharedMemory(sharedMemoryName = 'MotiveDump',dataType = 'Bone Marker',
     atexit.register(shared_block.close)
     return shared_block,shared_array
 
-def dumpFrameDataIntoSharedMemory():
-    pass
+def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None):
+    if simulate:
+        rowData = simulatedDF.iloc[frame,:][2:]
+        lengthRowData = rowData.shape[0]
+        noDims,noTypes = sharedMemArray.shape
+        count = 0
+        i = 0
+        while count < lengthRowData:
+            for j in range(0,noDims):
+                sharedMemArray[j][i] = rowData[count+j]
+            i += 1
+            count += noDims
+
+
+
+
 
 def retrieveSharedMemoryData(sharedMemoryName = 'MotiveDump'):
     pass

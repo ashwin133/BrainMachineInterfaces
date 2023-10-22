@@ -23,7 +23,7 @@ def visualise2DDataFrom3DarrayAnimation(sharedMemoryName = None,noDataTypes = No
         # function to update location of points frame by frame
         df = pd.DataFrame(shared_array) 
         print(df)
-        graph._offsets3d = (df[0], df[1], df[2])
+        graph._offsets3d = (df[2], df[0], df[1])
         title.set_text('Plotting markers, time={}'.format(num))
 
     # set up the figure
@@ -32,10 +32,10 @@ def visualise2DDataFrom3DarrayAnimation(sharedMemoryName = None,noDataTypes = No
     title = ax.set_title('Plotting markers')
 
     # plot the first set of data
-    graph = ax.scatter(df[0], df[1], df[2])
+    graph = ax.scatter(df[2], df[0], df[1])
 
     # set up the animation
-    ani = animation.FuncAnimation(fig, update_graph, 1000, 
+    ani = animation.FuncAnimation(fig, update_graph, 1200, 
                                 interval=8, blit=False)
 
     plt.show()

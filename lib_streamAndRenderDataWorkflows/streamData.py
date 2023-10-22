@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from multiprocessing import shared_memory
 import atexit
+import time
  
 
 def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
@@ -17,17 +18,56 @@ def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
     This function is designed to run continuously in the background and simulates the client which fetches
     data from motive and dumps it in shared memory.
     """
+
+    if simulatedDF is None:
+        raise Exception("Simulated Dataframe data not provided but the fetch live data simulator is called")
+
     if simulate:
         # this will simulate the process of retrieving live data by retrieving the frame corresponding to the current timestamp 
-        if simulatedDF is None:
-            raise Exception("Simulated Dataframe data not provided but the fetch live data simulator is called")
+        
+        x_headers = []
+        y_headers = []
+        z_headers = []
+        for header in simulatedDF.columns:
+            if 'X' in header:
+                x_headers.append(header)
+            if 'Y' in header:
+                y_headers.append(header)
+            if 'Z' in header:
+                z_headers.append(header)
 
-            # every nth of a second push a frame to shared memory
+        headers = [x_headers, y_headers, z_headers]
+        t_start = time.time()
+        current_frame = 0
+        n = 0.1
+        c = 0
+
+        while True:
+
+            # find current timestamp from start of simulation
+            timestamp = '%.6f'%(time.time() - t_start)
+
+            # if data is over, keep returning the last frame
+            if timestamp > simulatedDF['Time'].max():
+                current_frame_data = simulatedDF[current_frame]
+            
+            # retrieve data for current timestamp
+            if timestamp in simulatedDF.loc[:, 'Time(seconds)']:
+                current_frame = np.where(simulatedDF['Time(seconds)'] == timestamp)
+                current_frame_data = simulatedDF[current_frame]
+
+            # every nth of a second push a frame to shared memory, currently assuming Bone Marker data type
+            if timestamp == n*c:
+                idx = 0
+
+                for header in headers:
+                    sharedMemoryLocation[idx, :] = current_frame_data[header].to_numpy()
+                    idx += 1
+                c+=1
 
     else: # functionality for fetching actual data off motive
         pass 
 
-    pass
 
 
 def defineSharedMemory(sharedMemoryName = 'MotiveDump',dataType = 'Bone Marker',noDataTypes = 25):
@@ -58,7 +98,7 @@ def dumpFrameDataIntoSharedMemory():
 def retrieveSharedMemoryData(sharedMemoryName = 'MotiveDump'):
     pass
 
-def extractDataFrameFromCSV(dataLocation,includeCols = None):
+def extractDataFrameFromCSV(dataLocation,includeCols = 'Bone Marker'):
     """
     @PARAM: dataLocation: relative path to csv data
     @PARAM: includeCols: Includes columns of a specific type, e.g. Bone, Bone Marker

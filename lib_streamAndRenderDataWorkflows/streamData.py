@@ -48,20 +48,19 @@ def defineSharedMemory(sharedMemoryName = 'MotiveDump',dataType = 'Bone Marker',
 
     SHARED_MEM_NAME = sharedMemoryName
     shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=True)
-    shared_array = np.ndarray(shape=(varsPerDataType,noDataTypes), dtype=np.float64, buffer=shared_block.buf)
-    atexit.register(shared_block.close)
+    shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
     return shared_block,shared_array
 
 def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None):
     if simulate:
         rowData = simulatedDF.iloc[frame,:][2:]
         lengthRowData = rowData.shape[0]
-        noDims,noTypes = sharedMemArray.shape
+        noTypes,noDims = sharedMemArray.shape
         count = 0
         i = 0
         while count < lengthRowData:
             for j in range(0,noDims):
-                sharedMemArray[j][i] = rowData[count+j]
+                sharedMemArray[i][j] = rowData[count+j]
             i += 1
             count += noDims
 

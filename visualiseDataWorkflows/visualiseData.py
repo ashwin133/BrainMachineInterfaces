@@ -1,14 +1,15 @@
 """
-This file handles workflows needed to visualise data that has been streamed
-
+Enabling functionality to render data 
 """
-from multiprocessing import shared_memory
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt    
 import matplotlib.animation as animation
+from multiprocessing import shared_memory
+from mpl_toolkits.mplot3d import Axes3D
+import pandas as pd
 
-def visualiseFrameData(varsPerDataType,noDataTypes,sharedMemoryName,frameLength = 1000):
+def visualise2DDataFrom3DarrayAnimation(sharedMemoryName = None,noDataTypes = None, varsPerDataType = None):
+
     # access the shared memory    
     dataEntries = varsPerDataType * noDataTypes
     SHARED_MEM_NAME = sharedMemoryName
@@ -34,7 +35,11 @@ def visualiseFrameData(varsPerDataType,noDataTypes,sharedMemoryName,frameLength 
     graph = ax.scatter(df[2], df[0], df[1])
 
     # set up the animation
-    ani = animation.FuncAnimation(fig, update_graph, frameLength, 
+    ani = animation.FuncAnimation(fig, update_graph, 1200, 
                                 interval=8, blit=False)
 
     plt.show()
+
+
+if __name__ == "__main__":
+    visualise2DDataFrom3DarrayAnimation(sharedMemoryName= 'Motive Dump',noDataTypes=25,varsPerDataType=3)

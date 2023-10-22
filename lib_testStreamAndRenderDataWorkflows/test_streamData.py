@@ -42,7 +42,7 @@ def testFetchLiveData():
 def testDefineSharedMemory():
     sharedBlock,sharedArray = defineSharedMemory(sharedMemoryName= 'Motive Dump', dataType= "Bone Marker", noDataTypes= 25)
     atexit.register(sharedBlock.close)
-    assert sharedArray.shape == (3,25)
+    assert sharedArray.shape == (25,3)
     print("Executed")
     
 

@@ -9,7 +9,7 @@ import pytest
 import os
 
 # add Root Directory to system path to import created packages
-sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
+sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
 
 # import created packages
 from lib_streamAndRenderDataWorkflows.streamData import *
@@ -32,6 +32,7 @@ def testExtractDataFrameFromCSV():
                 raise Exception("Unusual working directory discovered, current directory is: {}".format(os.getcwd()))
 
         assert df.shape == (1801,482)
+        print(df)
 
 def testFetchLiveData():
     with pytest.raises(Exception,match = "Simulated Dataframe data not provided but the fetch live data simulator is called"):
@@ -43,6 +44,7 @@ def testDefineSharedMemory():
     atexit.register(sharedBlock.close)
     assert sharedArray.shape == (3,25)
     print("Executed")
+    
 
 if __name__ == "__main__":
     testExtractDataFrameFromCSV()

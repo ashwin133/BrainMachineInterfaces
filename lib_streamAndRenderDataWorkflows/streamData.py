@@ -11,9 +11,17 @@ import numpy as np
 from multiprocessing import shared_memory
 import atexit
 import time
+
+sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
+
+import lib_streamAndRenderDataWorkflows.Client.NatNetClient as NatNetClient
+import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions
+import lib_streamAndRenderDataWorkflows.Client.MoCapData as MoCapData
+import lib_streamAndRenderDataWorkflows.Client.PythonSample as PythonSample
  
 
-def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
+
+def fetchLiveData(sharedArray, sharedBlock, simulate = False,simulatedDF = None, timeout = 20.000):
     """
     This function is designed to run continuously in the background and simulates the client which fetches
     data from motive and dumps it in shared memory.
@@ -24,53 +32,35 @@ def fetchLiveData(sharedMemoryLocation,simulate = False,simulatedDF = None):
 
     if simulate:
         # this will simulate the process of retrieving live data by retrieving the frame corresponding to the current timestamp 
-        
-        x_headers = []
-        y_headers = []
-        z_headers = []
-        for header in simulatedDF.columns:
-            if 'X' in header:
-                x_headers.append(header)
-            if 'Y' in header:
-                y_headers.append(header)
-            if 'Z' in header:
-                z_headers.append(header)
 
-        headers = [x_headers, y_headers, z_headers]
+        is_looping = True
         t_start = time.time()
-        current_frame = 0
-        n = 0.1
-        c = 0
 
-        while True:
+        while is_looping:
+            timestamp = float('%.3f'%(time.time() - t_start))
+            if timestamp > timeout:
+                is_looping = False
+                sharedBlock.close()
+                break
 
-            # find current timestamp from start of simulation
-            timestamp = '%.6f'%(time.time() - t_start)
+            # dump latest data into shared memory
+            for i in range(0,simulatedDF.shape[0]):
+                timestamp = float('%.3f'%(time.time() - t_start))
+                dumpFrameDataIntoSharedMemory(simulate=True, simulatedDF= simulatedDF, frame = i, sharedMemArray=sharedArray)
+                time.sleep(0.008) # change this later
+                print("Dumped Frame {} into shared memory".format(i))
+                print(sharedArray)
 
-            # if data is over, keep returning the last frame
-            if timestamp > simulatedDF['Time'].max():
-                current_frame_data = simulatedDF[current_frame]
             
-            # retrieve data for current timestamp
-            if timestamp in simulatedDF.loc[:, 'Time(seconds)']:
-                current_frame = np.where(simulatedDF['Time(seconds)'] == timestamp)
-                current_frame_data = simulatedDF[current_frame]
 
-            # every nth of a second push a frame to shared memory, currently assuming Bone Marker data type
-            if timestamp == n*c:
-                idx = 0
-
-                for header in headers:
-                    sharedMemoryLocation[idx, :] = current_frame_data[header].to_numpy()
-                    idx += 1
-                c+=1
 
     else: # functionality for fetching actual data off motive
-        pass 
+        
+        PythonSample.fetchMotiveData(shared_array_pass=sharedArray, shared_block_pass=sharedBlock)
 
 
 
-def defineSharedMemory(sharedMemoryName = 'MotiveDump',dataType = 'Bone Marker',noDataTypes = 25):
+def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker',noDataTypes = 25, simulate = True):
     """
     Initialise shared memory
 
@@ -79,16 +69,23 @@ def defineSharedMemory(sharedMemoryName = 'MotiveDump',dataType = 'Bone Marker',
     @PARAM: noDataTypes - number of each type of marker, e.g. if bone marker selected then in an
     upper skeleton there are 25
     """
-    varsPerDataType = None
-    if dataType == "Bone Marker":
-        varsPerDataType = 3 # doesn't have rotations, only x,y,z
-    elif dataType == "Bone":
-        varsPerDataType = 7 # 4 rotations and 3 positions
-    dataEntries = varsPerDataType * noDataTypes # calculate how many data entries needed for each timestamp
 
-    SHARED_MEM_NAME = sharedMemoryName
-    shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=True)
-    shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
+    if simulate:
+
+        varsPerDataType = None
+        if dataType == "Bone Marker":
+            varsPerDataType = 3 # doesn't have rotations, only x,y,z
+        elif dataType == "Bone":
+            varsPerDataType = 7 # 4 rotations and 3 positions
+        dataEntries = varsPerDataType * noDataTypes # calculate how many data entries needed for each timestamp
+
+        SHARED_MEM_NAME = sharedMemoryName
+
+        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=True)
+        shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
+
+    else:
+        pass
     return shared_block,shared_array
 
 def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None):

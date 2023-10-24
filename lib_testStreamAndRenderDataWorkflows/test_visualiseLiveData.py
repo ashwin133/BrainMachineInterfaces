@@ -9,13 +9,9 @@ import pytest
 import os
 
 # add Root Directory to system path to import created packages
-try:
-    sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
-except ModuleNotFoundError:
-    try: 
-        sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
-    except:
-        pass
+sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
+sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
+
 
 # import user based libraries
 from lib_streamAndRenderDataWorkflows import VisualiseLiveData,streamData

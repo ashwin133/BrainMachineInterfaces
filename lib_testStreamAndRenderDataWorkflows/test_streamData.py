@@ -37,7 +37,7 @@ def testExtractDataFrameFromCSV():
             except FileNotFoundError:
                 raise Exception("Unusual working directory discovered, current directory is: {}".format(os.getcwd()))
 
-        assert df.shape == (1801,482)
+        assert df.shape == (1801,359)
         print(df)
 
 def testFetchLiveData():

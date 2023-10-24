@@ -42,4 +42,4 @@ def visualise2DDataFrom3DarrayAnimation(sharedMemoryName = None,noDataTypes = No
 
 
 if __name__ == "__main__":
-    visualise2DDataFrom3DarrayAnimation(sharedMemoryName= 'Motive Dump',noDataTypes=25,varsPerDataType=3)
+    visualise2DDataFrom3DarrayAnimation(sharedMemoryName= 'Test Rigid Body',noDataTypes=25,varsPerDataType=3)

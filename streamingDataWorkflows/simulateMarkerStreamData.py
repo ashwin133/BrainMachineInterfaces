@@ -1,5 +1,5 @@
 """
-Functionality to simulate the streaming of data from motive by feeding each frame 
+Functionality to simulate the streaming of labelled marker data from motive by feeding each frame 
 """
 
 
@@ -33,31 +33,31 @@ typeData = "Bone Marker"
 # feed in location of csv data to extract dataframe 
 try:        
     dataLocation = "Data/Rishita-jumping jacks 2023-10-18.csv"
-    simulated_DF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation,includeCols='Bone Marker')
+    simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation,includeCols='Bone Marker')
 except FileNotFoundError: # if file is run from location of file this is needed
     try:
         dataLocation = "Rishita-jumping jacks 2023-10-18.csv"
-        simulated_DF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone Marker')
+        simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone Marker')
     except:
         try:
             dataLocation = "../Data/Rishita-jumping jacks 2023-10-18.csv"
-            simulated_DF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone Marker')
+            simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone Marker')
         except:
             raise Exception('File not found')
 
 
 # initialise shared memory
-shared_Block,shared_Array = streamData.defineSharedMemory(sharedMemoryName= 'Test Rigid Body', dataType= "Bone Marker", noDataTypes= 3)
+shared_Block,sharedArray = streamData.defineSharedMemory(sharedMemoryName= 'Test Rigid Body', dataType= "Bone Marker", noDataTypes= 25)
 
 print("Starting to dump data into shared memory")
-# dump latest data into shared memory
-# for i in range(0,simulatedDF.shape[0]):
-#     streamData.dumpFrameDataIntoSharedMemory(simulate=True, simulatedDF= simulatedDF, frame = i, sharedMemArray=sharedArray)
-#     time.sleep(0.008) # change this later
-#     print("Dumped Frame {} into shared memory".format(i))
-#     print(sharedArray)
+#dump latest data into shared memory
+for i in range(0,simulatedDF.shape[0]):
+    streamData.dumpFrameDataIntoSharedMemory(simulate=True, simulatedDF= simulatedDF, frame = i, sharedMemArray=sharedArray)
+    time.sleep(0.008) # change this later
+    print("Dumped Frame {} into shared memory".format(i))
+    print(sharedArray)
 
-streamData.fetchLiveData(shared_Array, shared_Block, simulate=False, simulatedDF=simulated_DF)
+#streamData.fetchLiveData(shared_Array, shared_Block, simulate=False, simulatedDF=simulated_DF)
     
 print("Program ended successfully")
 shared_Block.close()

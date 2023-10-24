@@ -131,6 +131,13 @@ class NatNetClient:
     NAT_UNDEFINED             = 999999.9999
 
 
+    def set_shared_array(self, shared_array):
+        if not self.__is_locked:
+            self.shared_array = shared_array
+    
+    def get_shared_array(self):
+        return self.shared_array
+    
     def set_client_address(self, local_ip_address):
         if not self.__is_locked:
             self.local_ip_address = local_ip_address
@@ -347,7 +354,7 @@ class NatNetClient:
 
         # Send information to any listener.
         if self.rigid_body_listener is not None:
-            self.rigid_body_listener( new_id, pos, rot )
+            self.rigid_body_listener( new_id, pos, rot, self.shared_array)
 
         # RB Marker Data ( Before version 3.0.  After Version 3.0 Marker data is in description )
         if( major < 3  and major != 0) :
@@ -470,7 +477,7 @@ class NatNetClient:
 
         # send position data for all markers in the skeleton for a particular frame to listener
         if self.marker_data_listener is not None:
-            self.marker_data_listener(marker_data)
+            self.marker_data_listener(marker_data, self.shared_array)
 
         # Unlabeled markers count (4 bytes)
         unlabeled_markers_count = int.from_bytes( data[offset:offset+4], byteorder='little' )

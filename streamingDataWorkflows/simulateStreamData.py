@@ -55,7 +55,7 @@ print("Starting to dump data into shared memory")
 #     print("Dumped Frame {} into shared memory".format(i))
 #     print(sharedArray)
 
-streamData.fetchLiveData(shared_Array, shared_Block, simulate=True, simulatedDF=simulated_DF)
+streamData.fetchLiveData(shared_Array, shared_Block, simulate=False, simulatedDF=simulated_DF)
     
 print("Program ended successfully")
 shared_Block.close()

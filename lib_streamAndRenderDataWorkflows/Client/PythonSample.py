@@ -190,6 +190,7 @@ def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.
     optionsDict["clientAddress"] = clientAddress 
     optionsDict["serverAddress"] = serverAddress
     optionsDict["use_multicast"] = False
+    optionsDict["shared_array"] = shared_array_pass
 
     # This will create a new NatNet client
     optionsDict = my_parse_args(sys.argv, optionsDict)
@@ -198,11 +199,13 @@ def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.
     streaming_client.set_client_address(optionsDict["clientAddress"])
     streaming_client.set_server_address(optionsDict["serverAddress"])
     streaming_client.set_use_multicast(optionsDict["use_multicast"])
+    streaming_client.set_shared_array(optionsDict["shared_array"])
     streaming_client.set_print_level(1)
     # Configure the streaming client to call our rigid body handler on the emulator to send data out.
     streaming_client.new_frame_listener = receive_new_frame
-    streaming_client.rigid_body_listener = receive_rigid_body_frame(shared_array=shared_array_pass)
-    streaming_client.marker_data_listener = receive_marker_data_frame(shared_array=shared_array_pass)
+    streaming_client.rigid_body_listener = receive_rigid_body_frame
+    streaming_client.marker_data_listener = receive_marker_data_frame
+    print(streaming_client.shared_array)
 
     # Start up the streaming client now that the callbacks are set up.
     # This will run perpetually, and operate on a separate thread.
@@ -229,6 +232,7 @@ def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.
     
     print_configuration(streaming_client)
     print("\n")
+    
 
 
     while is_looping:

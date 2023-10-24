@@ -60,7 +60,7 @@ def fetchLiveData(sharedArray, sharedBlock, simulate = False,simulatedDF = None,
 
 
 
-def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker',noDataTypes = 25, simulate = True):
+def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker',noDataTypes = 3, simulate = True):
     """
     Initialise shared memory
 

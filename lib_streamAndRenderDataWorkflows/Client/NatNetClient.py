@@ -477,7 +477,7 @@ class NatNetClient:
             marker_set_data.add_marker_data(marker_data)
 
         # send position data for all markers in the skeleton for a particular frame to listener
-        if self.marker_data_listener is not None:
+        if self.marker_data_listener is not None and  'marker_data' in locals():
             self.marker_data_listener(marker_data, self.shared_array)
 
         # Unlabeled markers count (4 bytes)
@@ -1299,7 +1299,6 @@ class NatNetClient:
         if message_id == self.NAT_FRAMEOFDATA :
             trace( "Message ID  : %3.1d NAT_FRAMEOFDATA"% message_id )
             trace( "Packet Size : ", packet_size )
-
             offset_tmp, mocap_data = self.__unpack_mocap_data( data[offset:], packet_size, major, minor )
             offset += offset_tmp
             #print("MoCap Frame: %d\n"%(mocap_data.prefix_data.frame_number))

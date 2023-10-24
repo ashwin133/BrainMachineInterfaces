@@ -81,7 +81,7 @@ def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker'
 
         SHARED_MEM_NAME = sharedMemoryName
 
-        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=True)
+        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=False)
         shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
 
     else:

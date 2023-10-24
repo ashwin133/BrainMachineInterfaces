@@ -12,6 +12,8 @@ import atexit
 import time
 
 sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
+sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
+
 
 import lib_streamAndRenderDataWorkflows.Client.NatNetClient as NatNetClient
 import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions

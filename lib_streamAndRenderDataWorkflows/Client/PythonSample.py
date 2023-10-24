@@ -205,7 +205,7 @@ def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.
     streaming_client.new_frame_listener = receive_new_frame
     streaming_client.rigid_body_listener = receive_rigid_body_frame
     streaming_client.marker_data_listener = receive_marker_data_frame
-    print(streaming_client.shared_array)
+    #print(streaming_client.shared_array)
 
     # Start up the streaming client now that the callbacks are set up.
     # This will run perpetually, and operate on a separate thread.

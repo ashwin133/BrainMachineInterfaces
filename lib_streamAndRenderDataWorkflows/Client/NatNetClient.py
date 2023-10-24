@@ -86,6 +86,7 @@ class NatNetClient:
         self.rigid_body_listener = None
         self.new_frame_listener  = None
         self.marker_data_listener = None
+        self.labeled_marker_data_listener = None
         #self.skeleton_listener = None
         
 
@@ -537,6 +538,7 @@ class NatNetClient:
         offset = 0
         # Labeled markers (Version 2.3 and later)
         labeled_marker_count = 0
+        labeled_marker_set_data = []
         if( ( major == 2 and minor > 3 ) or major > 2 ):
             labeled_marker_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
             offset += 4
@@ -554,6 +556,11 @@ class NatNetClient:
                 trace_mf("ID     : [MarkerID: %3.1d] [ModelID: %3.1d]"%(marker_id,model_id))
                 trace_mf("  pos  : [%3.2f, %3.2f, %3.2f]"%(pos[0],pos[1],pos[2]))
                 trace_mf("  size : [%3.2f]"%size)
+
+                labeled_marker_set_data.append(pos)
+            
+            if self.labeled_marker_data_listener is not None:
+                self.labeled_marker_data_listener(labeled_marker_set_data, self.shared_array)
 
 
                 # Version 2.6 and later

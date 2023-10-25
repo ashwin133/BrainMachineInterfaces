@@ -87,6 +87,7 @@ class NatNetClient:
         self.new_frame_listener  = None
         self.marker_data_listener = None
         self.labeled_marker_data_listener = None
+        self.rigid_body_marker_data_listener = None
         #self.skeleton_listener = None
         
 
@@ -353,9 +354,7 @@ class NatNetClient:
 
         rigid_body = MoCapData.RigidBody(new_id, pos, rot)
 
-        # Send information to any listener.
-        if self.rigid_body_listener is not None:
-            self.rigid_body_listener( new_id, pos, rot, self.shared_array)
+        
 
         # RB Marker Data ( Before version 3.0.  After Version 3.0 Marker data is in description )
         if( major < 3  and major != 0) :
@@ -414,7 +413,9 @@ class NatNetClient:
             else:
                 rigid_body.tracking_valid = False
 
-
+        # Send information to any listener.
+        if self.rigid_body_marker_data_listener is not None:
+            self.rigid_body_marker_data_listener( rigid_body, self.shared_array)
         return offset, rigid_body
 
     # Unpack a skeleton object from a data packet

@@ -81,6 +81,17 @@ def receive_labeled_marker_data_frame(labeled_marker_data, shared_array):
         for j in range(0,noDims):
             shared_array[i][j] = markers[i].pos[j]
 
+def receive_rigid_body_marker_data_frame(rigid_body_data, shared_array):
+    #print( "Received frame for marker set", marker_data )
+    body = rigid_body_data.rigid_body_list
+    noTypes,noDims = shared_array.shape
+    for i in range(0,noTypes):
+        for j in range(0,noDims):
+            if j<4:
+                shared_array[i][j] = body[i].rot[j]
+            else:
+                shared_array[i][j] = body[i].pos[j]
+
 
 # def receive_skeleton(skeleton):
 #     #print( "Received frame for rigid body", new_id," ",position," ",rotation )
@@ -214,6 +225,7 @@ def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.
     streaming_client.rigid_body_listener = receive_rigid_body_frame
     #streaming_client.marker_data_listener = receive_marker_data_frame
     streaming_client.labeled_marker_data_listener = receive_labeled_marker_data_frame
+    streaming_client.rigid_body_set_listener = receive_rigid_body_marker_data_frame
     
     # Start up the streaming client now that the callbacks are set up.
     # This will run perpetually, and operate on a separate thread.

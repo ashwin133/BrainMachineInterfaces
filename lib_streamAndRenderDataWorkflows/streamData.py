@@ -81,7 +81,7 @@ def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker'
 
         SHARED_MEM_NAME = sharedMemoryName
 
-        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=False)
+        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=True)
         shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
 
     else:
@@ -142,7 +142,7 @@ def extractDataFrameFromCSV(dataLocation,includeCols = 'Bone Marker'):
     for i in range(2,df.shape[1]):
         currHeader = bodyParts[i] + ' ' + kinematicType[i] + ' ' + kinematicVariable[i]
         headerArray.append(currHeader)
-        if includeCols == None or includeCols in markerType[i]:
+        if includeCols == None or includeCols == markerType[i]:
             if colStartTruncateIndex == None:
                 colStartTruncateIndex = i
         elif colStartTruncateIndex is not None and colEndTruncateIndex == None:

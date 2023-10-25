@@ -80,8 +80,15 @@ def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker'
         dataEntries = varsPerDataType * noDataTypes # calculate how many data entries needed for each timestamp
 
         SHARED_MEM_NAME = sharedMemoryName
-
-        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=True)
+        try:
+            shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=True)
+        except FileExistsError:
+            Warning(FileExistsError)
+            userInput = input("Do you want to instead use the existing shared memory, Saying anything other than y will end the program? - y/n ")
+            if userInput == "y":
+                shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=sharedMemoryName, create=False)
+            else:
+                raise Exception(FileExistsError)
         shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
 
     else:

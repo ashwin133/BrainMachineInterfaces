@@ -27,7 +27,7 @@ def fetchLiveData(sharedArray, sharedBlock, simulate = False,simulatedDF = None,
     data from motive and dumps it in shared memory.
     """
 
-    if simulatedDF is None:
+    if simulate and simulatedDF is None:
         raise Exception("Simulated Dataframe data not provided but the fetch live data simulator is called")
 
     if simulate:

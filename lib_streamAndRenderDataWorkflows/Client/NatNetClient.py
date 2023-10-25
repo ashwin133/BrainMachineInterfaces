@@ -792,7 +792,7 @@ class NatNetClient:
         tracked_models_changed = frame_suffix_data.tracked_models_changed
         # Send information to any listener.
 
-        if self.labeled_marker_data_listener is not None:
+        if self.labeled_marker_data_listener is not None and bool(labeled_marker_data.labeled_marker_list):
                 self.labeled_marker_data_listener(labeled_marker_data, self.shared_array)
         if self.new_frame_listener is not None:
             data_dict={}

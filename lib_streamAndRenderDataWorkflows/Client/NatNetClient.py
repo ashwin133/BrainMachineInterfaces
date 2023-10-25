@@ -558,9 +558,7 @@ class NatNetClient:
                 trace_mf("  size : [%3.2f]"%size)
 
                 labeled_marker_set_data.append(pos)
-            
-            if self.labeled_marker_data_listener is not None:
-                self.labeled_marker_data_listener(labeled_marker_set_data, self.shared_array)
+        
 
 
                 # Version 2.6 and later
@@ -792,6 +790,9 @@ class NatNetClient:
         is_recording = frame_suffix_data.is_recording
         tracked_models_changed = frame_suffix_data.tracked_models_changed
         # Send information to any listener.
+
+        if self.labeled_marker_data_listener is not None:
+                self.labeled_marker_data_listener(labeled_marker_data, self.shared_array)
         if self.new_frame_listener is not None:
             data_dict={}
             data_dict["frame_number"]=frame_number

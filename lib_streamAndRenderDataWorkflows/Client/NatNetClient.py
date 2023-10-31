@@ -17,6 +17,8 @@
 import sys
 
 sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
+sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
+
 
 import socket
 import struct
@@ -25,6 +27,7 @@ import copy
 import time
 import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions
 import lib_streamAndRenderDataWorkflows.Client.MoCapData as MoCapData
+
 
 def trace( *args ):
     # uncomment the one you want to use
@@ -354,7 +357,8 @@ class NatNetClient:
 
         rigid_body = MoCapData.RigidBody(new_id, pos, rot)
 
-        
+        if self.rigid_body_listener is not None:
+            self.rigid_body_listener( rigid_body, self.shared_array)
 
         # RB Marker Data ( Before version 3.0.  After Version 3.0 Marker data is in description )
         if( major < 3  and major != 0) :
@@ -414,8 +418,7 @@ class NatNetClient:
                 rigid_body.tracking_valid = False
 
         # Send information to any listener.
-        if self.rigid_body_marker_data_listener is not None:
-            self.rigid_body_marker_data_listener( rigid_body, self.shared_array)
+        
         return offset, rigid_body
 
     # Unpack a skeleton object from a data packet
@@ -506,6 +509,9 @@ class NatNetClient:
             offset += offset_tmp
             rigid_body_data.add_rigid_body(rigid_body)
 
+        # if self.rigid_body_marker_data_listener is not None:
+        #     self.rigid_body_marker_data_listener( rigid_body, self.shared_array)
+
         return offset, rigid_body_data
 
 
@@ -523,7 +529,7 @@ class NatNetClient:
                 rel_offset, skeleton = self.__unpack_skeleton( data[offset:], major, minor )
                 offset += rel_offset
                 skeleton_data.add_skeleton(skeleton)
-                print(skeleton_data.get_as_string())
+                #print(skeleton_data.get_as_string())
 
         return offset, skeleton_data
 
@@ -756,6 +762,9 @@ class NatNetClient:
         mocap_data.set_rigid_body_data(rigid_body_data)
         rigid_body_count = rigid_body_data.get_rigid_body_count()
 
+        
+
+
         # Skeleton Data
         rel_offset, skeleton_data = self.__unpack_skeleton_data(data[offset:], (packet_size - offset),major, minor)
         offset += rel_offset
@@ -792,8 +801,8 @@ class NatNetClient:
         tracked_models_changed = frame_suffix_data.tracked_models_changed
         # Send information to any listener.
 
-        if self.labeled_marker_data_listener is not None and bool(labeled_marker_data.labeled_marker_list):
-                self.labeled_marker_data_listener(labeled_marker_data, self.shared_array)
+        #if self.labeled_marker_data_listener is not None and bool(labeled_marker_data.labeled_marker_list):
+        #        self.labeled_marker_data_listener(labeled_marker_data, self.shared_array)
         if self.new_frame_listener is not None:
             data_dict={}
             data_dict["frame_number"]=frame_number
@@ -1301,8 +1310,12 @@ class NatNetClient:
         if message_id == self.NAT_FRAMEOFDATA :
             trace( "Message ID  : %3.1d NAT_FRAMEOFDATA"% message_id )
             trace( "Packet Size : ", packet_size )
+            import lib_streamAndRenderDataWorkflows.streamData as streamData
             offset_tmp, mocap_data = self.__unpack_mocap_data( data[offset:], packet_size, major, minor )
+            # place mocap_data into shared memory here
+            streamData.dumpFrameDataIntoSharedMemory(simulate=False,sharedMemArray=self.shared_array,mocapData=mocap_data)
             offset += offset_tmp
+            #print(self.shared_array)
             #print("MoCap Frame: %d\n"%(mocap_data.prefix_data.frame_number))
             # get a string version of the data for output
             mocap_data_str=mocap_data.get_as_string()

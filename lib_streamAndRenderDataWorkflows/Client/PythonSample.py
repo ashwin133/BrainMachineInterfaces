@@ -21,6 +21,8 @@
 import sys
 
 sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
+sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
+
 
 import time
 from lib_streamAndRenderDataWorkflows.Client.NatNetClient import NatNetClient
@@ -82,15 +84,16 @@ def receive_labeled_marker_data_frame(labeled_marker_data, shared_array):
             shared_array[i][j] = markers[i].pos[j]
 
 def receive_rigid_body_marker_data_frame(rigid_body_data, shared_array):
-    #print( "Received frame for marker set", marker_data )
-    body = rigid_body_data.rigid_body_list
-    noTypes,noDims = shared_array.shape
-    for i in range(0,noTypes):
-        for j in range(0,noDims):
-            if j<4:
-                shared_array[i][j] = body[i].rot[j]
-            else:
-                shared_array[i][j] = body[i].pos[j]
+    # #print( "Received frame for marker set", marker_data )
+    # body = rigid_body_data.rigid_body_list
+    # noTypes,noDims = shared_array.shape
+    # for i in range(0,noTypes):
+    #     for j in range(0,noDims):
+    #         if j<4:
+    #             shared_array[i][j] = body[i].rot[j]
+    #         else:
+    #             shared_array[i][j] = body[i].pos[j]
+    pass
 
 
 # def receive_skeleton(skeleton):
@@ -203,7 +206,7 @@ def my_parse_args(arg_list, args_dict):
     return args_dict
 
 
-def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.14", shared_array_pass = None, shared_block_pass = None):
+def fetchMotiveData(clientAddress = "192.168.0.148", serverAddress = "192.168.0.14", shared_array_pass = None, shared_block_pass = None):
 
     optionsDict = {}
     optionsDict["clientAddress"] = clientAddress 
@@ -219,18 +222,18 @@ def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.
     streaming_client.set_server_address(optionsDict["serverAddress"])
     streaming_client.set_use_multicast(optionsDict["use_multicast"])
     streaming_client.set_shared_array(optionsDict["shared_array"])
-    streaming_client.set_print_level(1)
+    streaming_client.set_print_level(0)
     # Configure the streaming client to call our rigid body handler on the emulator to send data out.
     streaming_client.new_frame_listener = receive_new_frame
-    streaming_client.rigid_body_listener = receive_rigid_body_frame
+    # streaming_client.rigid_body_listener = receive_rigid_body_frame
     #streaming_client.marker_data_listener = receive_marker_data_frame
     streaming_client.labeled_marker_data_listener = receive_labeled_marker_data_frame
-    streaming_client.rigid_body_set_listener = receive_rigid_body_marker_data_frame
+    streaming_client.rigid_body_marker_data_listener = receive_rigid_body_marker_data_frame
     
     # Start up the streaming client now that the callbacks are set up.
     # This will run perpetually, and operate on a separate thread.
     is_running = streaming_client.run()
-    print(streaming_client.shared_array)
+    #print(streaming_client.shared_array)
 
     if not is_running:
         print("ERROR: Could not start streaming client.")
@@ -252,7 +255,7 @@ def fetchMotiveData(clientAddress = "192.168.0.128", serverAddress = "192.168.0.
         finally:
             print("exiting")
     
-    print_configuration(streaming_client)
+    #print_configuration(streaming_client)
     print("\n")
     
 

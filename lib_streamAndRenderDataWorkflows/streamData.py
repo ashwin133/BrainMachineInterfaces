@@ -18,7 +18,8 @@ import lib_streamAndRenderDataWorkflows.Client.NatNetClient as NatNetClient
 import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions
 import lib_streamAndRenderDataWorkflows.Client.MoCapData as MoCapData
 import lib_streamAndRenderDataWorkflows.Client.PythonSample as PythonSample
- 
+
+bodyType_ = None
 
 
 def fetchLiveData(sharedArray, sharedBlock, simulate = False,simulatedDF = None, timeout = 20.000):
@@ -57,10 +58,10 @@ def fetchLiveData(sharedArray, sharedBlock, simulate = False,simulatedDF = None,
     else: # functionality for fetching actual data off motive
         
         PythonSample.fetchMotiveData(shared_array_pass=sharedArray, shared_block_pass=sharedBlock)
+        
 
 
-
-def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker',noDataTypes = 3, simulate = True):
+def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker',noDataTypes = 3, simulate = True,bodyType = None):
     """
     Initialise shared memory
 
@@ -69,7 +70,8 @@ def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker'
     @PARAM: noDataTypes - number of each type of marker, e.g. if bone marker selected then in an
     upper skeleton there are 25
     """
-
+    global bodyType_
+    bodyType_ = bodyType # either labeled_marker, rigid_body, skeleton or marker_set
     if simulate:
 
         varsPerDataType = None
@@ -94,8 +96,9 @@ def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker'
     else:
         pass
     return shared_block,shared_array
+    
 
-def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None):
+def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None,mocapData = None):
     if simulate:
         rowData = simulatedDF.iloc[frame,:][2:]
         lengthRowData = rowData.shape[0]
@@ -107,6 +110,67 @@ def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,
                 sharedMemArray[i][j] = rowData[count+j]
             i += 1
             count += noDims
+    else:
+
+        #print("Program brought into this loop")
+        # first extract all components of mocap data
+
+        # first extract labeled_markers
+        global bodyType_
+        if bodyType_ == None:
+            labeledMarkerData = mocapData.labeled_marker_data.labeled_marker_list
+            rigidBodyData = mocapData.rigid_body_data.rigid_body_list
+            skeletonData = mocapData.skeleton_data.skeleton_list
+            markerSetData = mocapData.marker_set_data.marker_data_list
+            if bool(labeledMarkerData):
+                bodyType_ = 'labeled_marker'
+            elif bool(rigidBodyData):
+                bodyType_ = 'rigid_body'
+            elif bool(skeletonData):
+                bodyType_ = 'skeleton'
+            elif bool(markerSetData):
+                bodyType_ = 'marker_set'
+            else:
+                raise Exception("No data recieved")
+        elif bodyType_ == 'labeled_marker':
+            labeledMarkerData = mocapData.labeled_marker_data.labeled_marker_list
+        elif bodyType_ == 'rigid_body':
+            rigidBodyData = mocapData.rigid_body_data.rigid_body_list
+        elif bodyType_ == 'skeleton':
+            skeletonData = mocapData.skeleton_data.skeleton_list
+        elif bodyType_ == 'marker_set':
+            markerSetData = mocapData.marker_set_data.marker_data_list
+
+        if bodyType_ == 'labeled_marker':
+            for marker in labeledMarkerData:
+                searchArray = list(sharedMemArray[:,0])
+                if marker.id_num not in searchArray:
+                    idx = searchArray.index(0)
+                    sharedMemArray[idx][0] = marker.id_num
+                    sharedMemArray[idx][1:5] = marker.pos
+                    colIdx += 1
+                elif marker.id_num in searchArray:
+                    idx = searchArray.index(marker.id_num)
+                    sharedMemArray[idx][0] = marker.id_num
+                    sharedMemArray[idx][1:5] = marker.pos
+
+        elif bodyType_ == 'rigid_body':
+            pass
+        elif bodyType_ == 'skeleton':
+            colIdx = 0
+            for skeletonIdx in range(0,len(skeletonData)):
+                skeleton = skeletonData[skeletonIdx].rigid_body_list
+                for rigidBody in skeleton:
+                    sharedMemArray[colIdx][0:4] = rigidBody.rot
+                    sharedMemArray[colIdx][4:7] = rigidBody.pos
+                    colIdx += 1
+            
+        elif bodyType_ == 'marker_set':
+            pass
+
+
+
+    
 
 
 

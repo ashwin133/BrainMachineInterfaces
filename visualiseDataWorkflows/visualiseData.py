@@ -122,9 +122,5 @@ def visualiseVectorsFrom3DarrayAnimation(sharedMemoryName = None,noDataTypes = N
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     # visualiseVectorsFrom3DarrayAnimation(sharedMemoryName= 'Motive Dump',noDataTypes=25,varsPerDataType=7)
-    visualise2DDataFrom3DarrayAnimation(sharedMemoryName= 'Motive Dump',noDataTypes=25,varsPerDataType=7)
-=======
-    visualise2DDataFrom3DarrayAnimation(sharedMemoryName= 'Test Rigid Body',noDataTypes=25,varsPerDataType=3)
->>>>>>> ad40befcfbab945b135e867e8944de61dbfec977
+    visualise2DDataFrom3DarrayAnimation(sharedMemoryName= 'Motive Dump',noDataTypes=25,varsPerDataType=3)

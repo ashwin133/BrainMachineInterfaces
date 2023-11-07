@@ -1,62 +1,79 @@
-import os
-import pygame as pg
-import config
-import numpy as np
+import pygame
+import sys
 import math
+import config
 
-main_dir = os.path.split(os.path.abspath(__file__))[0]
-data_dir = os.path.join(main_dir, "images")
-
-class Pendulum(pg.sprite.Sprite):
+class Pendulum():
 
     def __init__(self):
-        pg.sprite.Sprite.__init__(self)
-        self.image= pg.image.load(os.path.join(data_dir, "pendulum.png")).convert_alpha()
-        # self.image = pg.transform.scale(self.image, (32,34))
-        self.rect = self.image.get_rect()
-        self.rect.center = pg.display.get_window_size()[0]/2, 300
-        self.angle = 0
-        self.ang_vel = 0
-        self.move = 0
-        self.mass = config.PENDULUM['mass']
-        self.length = config.PENDULUM['length']
-        self.rod_start = self.rect.midbottom
 
-    def update(self):
-        screen = pg.display.get_surface()
-        pos = pg.mouse.get_pos()
-        self.rect.center = pos[0] + config.CART['width']/2 + config.PENDULUM['rod_length']*np.sin((self.angle)), 300 - config.PENDULUM['rod_length']*(1 - np.cos((self.angle)))
+       # Initial state
+        self.pendulum_angle = 0
+        self.pendulum_angular_velocity = 0
+        self.cart = None
+        self.previous_time = 0
+    
+    def set_cart(self, cart):
+        self.cart = cart
+
+    def draw_pendulum(self, screen):
+        # Calculate pendulum position
+        pendulum_center_x = self.cart.cart_x + config.CART_WIDTH // 2
+        pendulum_center_y = config.HEIGHT - config.CART_HEIGHT
+        pendulum_end_x = pendulum_center_x + config.PEN_LENGTH * math.sin(self.pendulum_angle)
+        pendulum_end_y = pendulum_center_y - config.PEN_LENGTH * math.cos(self.pendulum_angle)
+
+        # Draw pendulum
+        pygame.draw.line(screen, config.PENDULUM_COLOR, (pendulum_center_x, pendulum_center_y), (pendulum_end_x, pendulum_end_y), config.PENDULUM_WIDTH)
+
+
+
+    def update_pendulum_state(self):
+    
+        current_time = pygame.time.get_ticks() / 1000.0
+        elapsed_time = current_time - self.previous_time
+
+        # Apply control here (adjust cart_velocity based on pendulum_angle)
+
+        # Update pendulum state
+        pendulum_acceleration = (
+            config.G * math.sin(self.pendulum_angle) - 
+            math.cos(self.pendulum_angle) * (self.cart.cart_velocity ** 2) / config.PEN_LENGTH
+        )
+        self.pendulum_angular_velocity += pendulum_acceleration * elapsed_time
+        self.pendulum_angle += self.pendulum_angular_velocity * elapsed_time
+
+
+
+        # Update cart position
+
+        self.cart.update_cart()
+
+        self.previous_time = current_time
+
+
+class Cart():
+
+    def __init__(self):
+
+       # Initial state
+        self.cart_x = (config.WIDTH - config.CART_WIDTH) // 2
+        self.cart_velocity = 0
+        self.previous_time = 0
+
+    def draw_cart(self, screen):
         
+        # Draw cart
+        pygame.draw.rect(screen, config.CART_COLOR, (self.cart_x, config.HEIGHT - config.CART_HEIGHT, config.CART_WIDTH, config.CART_HEIGHT))
 
-class Cart(pg.sprite.Sprite):
-    
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self)
-        self.image= pg.image.load(os.path.join(data_dir, "cart.png")).convert_alpha()
-        self.image = pg.transform.scale(self.image, (config.CART['width'],config.CART['height']))
-        self.rect = self.image.get_rect()
-        self.rect.midleft = pg.display.get_window_size()[0]/2 - config.CART['width']/2, 300 + config.PENDULUM['rod_length']
-        self.pos =  pg.display.get_window_size()[0]/2
-        self.vel = 0     
-        self.move = 0
-        self.mass = config.CART['mass']
-        self.rod_end = self.rect.midtop
+    def update_cart(self):
 
-    def update(self):
-        screen = pg.display.get_surface()
-        pos = pg.mouse.get_pos()[0]
-        self.pos = pos - 640
-        self.rect.midleft = pos, 300 + config.PENDULUM['rod_length']
-        self.pos = pos - pg.display.get_window_size()[0]/2
+        current_time = pygame.time.get_ticks() / 1000.0
+        elapsed_time = current_time - self.previous_time
+        sensitivity = 150
+        # Update cart position
+        
+        self.cart_x += sensitivity*self.cart_velocity * elapsed_time
 
-    
-
-# class Rod(pg.sprite.Sprite):
-    
-#     def __init__(self):
-#         pg.sprite.Sprite.__init__(self)
-#         self.image = pg.draw.line(pg.display.get_surface(), config.BACKGROUND['rod_colour'],  )
-
-
-
+        self.previous_time = current_time
 

@@ -25,6 +25,7 @@ import struct
 from threading import Thread
 import copy
 import time
+import timeit
 import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions
 import lib_streamAndRenderDataWorkflows.Client.MoCapData as MoCapData
 
@@ -1235,8 +1236,11 @@ class NatNetClient:
                             print_level = 1
                         else:
                             print_level = 0
+                            
+                start = time.time()
                 message_id = self.__process_message( data , print_level)
-
+                end = time.time()
+                #print('time for one operation: {}'.format(end-start)) # around 5ms
                 data=bytearray(0)
 
             if not self.use_multicast:

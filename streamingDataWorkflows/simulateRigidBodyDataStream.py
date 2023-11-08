@@ -47,7 +47,7 @@ except FileNotFoundError: # if file is run from location of file this is needed
 
 
 # initialise shared memory
-shared_Block,sharedArray = streamData.defineSharedMemory(sharedMemoryName= 'Test Rigid Body', dataType= "Bone", noDataTypes= 43)
+shared_Block,sharedArray = streamData.defineSharedMemory(sharedMemoryName= 'Test Rigid Body', dataType= "Bone", noDataTypes= 51)
 
 print("Starting to dump data into shared memory")
 #dump latest data into shared memory

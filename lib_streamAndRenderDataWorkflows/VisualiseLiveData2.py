@@ -96,7 +96,7 @@ def simulateDisplayQuarternionData(varsPerDataType,noDataTypes,sharedMemoryName,
     if sim == False:
         df_locations = [df.iloc[a,:] for a in range(0,df.shape[0])] # split rows into list
         df_locations_quaternionObjs = [quaternions.quaternionVector(loc = [a.iloc[4]/1000,a.iloc[5]/1000,a.iloc[6]/1000],quaternion=[a.iloc[0],a.iloc[1],a.iloc[2],a.iloc[3]]) for a in df_locations]
-        df_directions =  pd.DataFrame([q.qv_mult(q.quaternion,[-1,0,0]) for q in df_locations_quaternionObjs])
+        df_directions =  pd.DataFrame([q.qv_mult(q.quaternion,[0,-1,0]) for q in df_locations_quaternionObjs])
         dfPlot = pd.DataFrame({'x':df.iloc[:,4],'y':df.iloc[:,5],'z':df.iloc[:,6],'dirX':df_directions.iloc[:,0],'dirY':df_directions.iloc[:,1],'dirZ':df_directions.iloc[:,2]})
         maxX, maxY, maxZ = max(df.iloc[:,4].max(),maxX), max(df.iloc[:,5].max(),maxY), max(df.iloc[:,6].max(),maxZ)
         minX, minY, minZ = min(df.iloc[:,4].min(),minX), min(df.iloc[:,5].min(),minY), min(df.iloc[:,6].min(),minZ)
@@ -454,8 +454,8 @@ if __name__ == "__main__":
     #simulateDisplayQuarternionData(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = [48]) # right shin
     #simulateDisplayQuarternionData(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = [49]) # right foot
     #simulateDisplayQuarternionData(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = [50]) # right toe
-    #simulateDisplayQuarternionData_v3(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts)
+    simulateDisplayQuarternionData_v3(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts)
     
     # run this for the game
-    calculateBodyPartPosVectors(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts)
+    #calculateBodyPartPosVectors(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts)
     print("Program ended")

@@ -38,12 +38,15 @@ def main():
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             cart.cart_velocity = -0.5
+            cart.update_cart()
             pendulum.update_pendulum_state()
         elif keys[pygame.K_RIGHT]:
             cart.cart_velocity = 0.5
+            cart.update_cart()
             pendulum.update_pendulum_state()
         else:
             cart.cart_velocity = 0
+            cart.update_cart()
             pendulum.update_pendulum_state()
 
     

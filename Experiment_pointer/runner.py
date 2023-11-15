@@ -39,6 +39,11 @@ boxColor = RED
 targetStartTime = 2000
 timeToReach = None
 FETCHDATAFROMREALTIME = True
+
+
+enforce = True
+offline = False
+positions = True
 """
 Objects
 """
@@ -91,23 +96,41 @@ class Player(pygame.sprite.Sprite):
     
     def updatepos(self,x,y):
         # note will need to enforce 0<x<960 and 0 < y < 720
-        enforce = True
-        offline = False
+        global enforce
+        global offline
+        global positions
         if enforce and offline:
             y = 720 * (y/2000)
             x = (x + 600)
-        elif enforce and not offline:
+        elif enforce and not offline and not positions:
             y = (y+1)/1 * 360 # 
             x = (x+0.25) * 1200
+        elif enforce and not offline and positions:
+            y = (y+1)/1 * 600 # 
+            x = (x-1)/4 * 800   # 1600 - 2400
         self.rect.x = x
         self.rect.y = y
         global targetStartTime
         if self.targetBoxXmin <= self.rect.x <= self.targetBoxXmax and self.targetBoxYmin <= self.rect.y <= self.targetBoxYmax and pygame.time.get_ticks() > targetStartTime:
             global boxColor
             global GREEN
+            global timeToReach
             boxColor = GREEN
             timeToReach = pygame.time.get_ticks()
+            print(timeToReach)
+
+    def reset(self,targetBox):
+        self.targetBoxXmin = targetBox.leftCornerXBoxLoc
+        self.targetBoxXmax = targetBox.leftCornerXBoxLoc + targetBox.boxWidth
+        self.targetBoxYmin = targetBox.leftCornerYBoxLoc
+        self.targetBoxYmax = targetBox.leftCornerYBoxLoc + targetBox.boxHeight
+        global boxColor
+        global RED
+        boxColor = RED
+    
+
             
+
 
 
 """
@@ -155,12 +178,13 @@ Main Loop
 while main:
 
     if FETCHDATAFROMREALTIME:
-            player.updatepos(shared_array[rightHandIndex][4],shared_array[rightHandIndex][5]) # get index 1 and 2 for pos
+            #player.updatepos(shared_array[rightHandIndex][4],shared_array[rightHandIndex][5]) # get index 1 and 2 for pos
+            player.updatepos(-shared_array[rightHandIndex][1],-shared_array[rightHandIndex][2])
             print('X:',player.rect.x)
             print('Y:',player.rect.y)
-            print('dirX:',shared_array[rightHandIndex][3] )
-            print('dirY:',shared_array[rightHandIndex][4] ) # this is x
-            print('dirZ:',shared_array[rightHandIndex][5] ) # this is y
+            print('dirX:',shared_array[rightHandIndex][0] ) 
+            print('dirY:',shared_array[rightHandIndex][1] ) # this is -x
+            print('dirZ:',shared_array[rightHandIndex][2] ) # this is -y
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -218,6 +242,14 @@ while main:
     player.update()
     world.fill(BLUE)
     player_list.draw(world) # draw player
+
+    if timeToReach is not None and pygame.time.get_ticks() > timeToReach + 2000:
+        # reset
+        timeToReach = None
+        leftCornerXBoxLoc = np.random.randint(100,500)
+        leftCornerYBoxLoc = np.random.randint(100,400)
+        targetBox = Box(leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight)
+        player.reset(targetBox)
     if pygame.time.get_ticks() > targetStartTime:
         pygame.draw.rect(world, boxColor, pygame.Rect(leftCornerXBoxLoc, leftCornerYBoxLoc, boxWidth, boxHeight)) # draw red box : left, top, width, height (600 to 750, 240, 390)
     pygame.display.flip()

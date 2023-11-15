@@ -1,22 +1,21 @@
-PENDULUM = {
-    "mass": 1,
-    "rod_length": 100,
-    "length": 100,
-    "MOI": 10000,
-}
+# Constants
+WIDTH, HEIGHT = 1600, 800
+PEN_LENGTH = 100
+CART_WIDTH, CART_HEIGHT = 100, 20
+PENDULUM_WIDTH, PENDULUM_HEIGHT = 10, 50
+CART_COLOR = (0, 0, 0)
+PENDULUM_COLOR = (255, 0, 0)
+BACKGROUND_COLOR = (255, 255, 255)
+G = 9.81
 
-CART = {
-    "mass": 50,
-    "width": 150,
-    "height": 50
-}
+# 3D constants
+CART_WIDTH_3D = 10
+CART_HEIGHT_3D = 5
+CART_DEPTH_3D = 5
+PENDULUM_RADIUS_3D = 1
+PENDULUM_HEIGHT_3D = 12
+PENDULUM_OFFSET_3D = 1.0
 
-BACKGROUND = {
-    "width": 1280,
-    "height": 480,
-    "window_name": "Inverted Pendulum",
-    "colour": (0, 0, 0),
-    "rod_colour": (108, 0, 255)
-}
-
-GRAVITY = 9.8
+# Game settings
+SENSITIVITY_2D = 100
+SENSITIVITY_3D = 20

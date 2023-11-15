@@ -1,62 +1,125 @@
-import os
-import pygame as pg
+import pygame
+import sys
+import math
 import config
+import pygame
+from pygame.locals import *
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+from OpenGL.GLU import *
 import numpy as np
 import math
 
-main_dir = os.path.split(os.path.abspath(__file__))[0]
-data_dir = os.path.join(main_dir, "images")
 
-class Pendulum(pg.sprite.Sprite):
+class Pendulum():
 
     def __init__(self):
-        pg.sprite.Sprite.__init__(self)
-        self.image= pg.image.load(os.path.join(data_dir, "pendulum.png")).convert_alpha()
-        # self.image = pg.transform.scale(self.image, (32,34))
-        self.rect = self.image.get_rect()
-        self.rect.center = pg.display.get_window_size()[0]/2, 300
-        self.angle = 0
-        self.ang_vel = 0
-        self.move = 0
-        self.mass = config.PENDULUM['mass']
-        self.length = config.PENDULUM['length']
-        self.rod_start = self.rect.midbottom
 
-    def update(self):
-        screen = pg.display.get_surface()
-        pos = pg.mouse.get_pos()
-        self.rect.center = pos[0] + config.CART['width']/2 + config.PENDULUM['rod_length']*np.sin((self.angle)), 300 - config.PENDULUM['rod_length']*(1 - np.cos((self.angle)))
+       # Initial state
+        self.pendulum_angle = 0
+        self.pendulum_angular_velocity = 0
+        self.pendulum_angle_3D = 0
+        self.pendulum_angular_velocity_3D = 0
+        self.cart = None
+        self.previous_time = 0
+    
+    def set_cart(self, cart):
+        self.cart = cart
+
+    def draw_pendulum(self, screen):
+        # Calculate pendulum position
+        pendulum_center_x = self.cart.cart_velocity + self.cart.cart_x + config.CART_WIDTH // 2
+        pendulum_center_y = config.HEIGHT - config.CART_HEIGHT
+        pendulum_end_x = pendulum_center_x + config.PEN_LENGTH * math.sin(self.pendulum_angle)
+        pendulum_end_y = pendulum_center_y - config.PEN_LENGTH * math.cos(self.pendulum_angle)
+
+        # Draw pendulum
+        pygame.draw.line(screen, config.PENDULUM_COLOR, (pendulum_center_x, pendulum_center_y), (pendulum_end_x, pendulum_end_y), config.PENDULUM_WIDTH)
+
+    def draw_pendulum_3d(self):
+
+        quadric = gluNewQuadric()
+        gluQuadricNormals(quadric, GLU_SMOOTH)
+        glColor(config.PENDULUM_COLOR)
+        
+        glPushMatrix()
+        glRotatef(-math.degrees(self.pendulum_angle_3D), 0, 1, 0)
+        
+        
+        gluCylinder(quadric, config.PENDULUM_RADIUS_3D, config.PENDULUM_RADIUS_3D, config.PENDULUM_HEIGHT_3D, 20, 10)
+        glTranslatef(self.cart.cart_x_3D,0, config.CART_DEPTH_3D)
+        
+        glPopMatrix()
+
+    def update_pendulum_state(self):
+    
+        current_time = pygame.time.get_ticks() / 1000.0
+        elapsed_time = current_time - self.previous_time
+
+        # Apply control here (adjust cart_velocity based on pendulum_angle)
+
+        # Update pendulum state
+        # pendulum_acceleration = (
+        #     config.G * math.sin(self.pendulum_angle) - 
+        #     math.cos(self.pendulum_angle) * (self.cart.cart_velocity ** 2) / config.PENDULUM_HEIGHT
+        # )
+        pendulum_acceleration = (
+            config.G * math.sin(self.pendulum_angle) -
+            math.cos(self.pendulum_angle) * (self.cart.cart_velocity ** 2) / config.PENDULUM_HEIGHT
+        )
+        pendulum_acceleration_3D = (
+            config.G * math.sin(self.pendulum_angle) - 
+            math.cos(self.pendulum_angle) * (self.cart.cart_velocity ** 2) / config.PENDULUM_HEIGHT_3D 
+        )
+        
+        self.pendulum_angular_velocity += pendulum_acceleration * elapsed_time
+        self.pendulum_angle += self.pendulum_angular_velocity * elapsed_time
+
+        self.pendulum_angular_velocity_3D += pendulum_acceleration_3D * elapsed_time
+        self.pendulum_angle_3D += -(self.cart.cart_velocity/config.PENDULUM_HEIGHT_3D ) + self.pendulum_angular_velocity_3D * elapsed_time
+
         
 
-class Cart(pg.sprite.Sprite):
-    
+        # Update cart position
+
+        # self.cart.update_cart()
+
+        self.previous_time = current_time
+
+
+class Cart():
+
     def __init__(self):
-        pg.sprite.Sprite.__init__(self)
-        self.image= pg.image.load(os.path.join(data_dir, "cart.png")).convert_alpha()
-        self.image = pg.transform.scale(self.image, (config.CART['width'],config.CART['height']))
-        self.rect = self.image.get_rect()
-        self.rect.midleft = pg.display.get_window_size()[0]/2 - config.CART['width']/2, 300 + config.PENDULUM['rod_length']
-        self.pos =  pg.display.get_window_size()[0]/2
-        self.vel = 0     
-        self.move = 0
-        self.mass = config.CART['mass']
-        self.rod_end = self.rect.midtop
 
-    def update(self):
-        screen = pg.display.get_surface()
-        pos = pg.mouse.get_pos()[0]
-        self.pos = pos - 640
-        self.rect.midleft = pos, 300 + config.PENDULUM['rod_length']
-        self.pos = pos - pg.display.get_window_size()[0]/2
+       # Initial state
+        self.cart_x = (config.WIDTH - config.CART_WIDTH) // 2
+        self.cart_x_3D = 0
+        self.cart_velocity = 0
+        self.previous_time = 0
 
-    
+    def draw_cart(self, screen):
+        
+        # Draw cart
+        pygame.draw.rect(screen, config.CART_COLOR, (self.cart_x, config.HEIGHT - config.CART_HEIGHT, config.CART_WIDTH, config.CART_HEIGHT))
 
-# class Rod(pg.sprite.Sprite):
-    
-#     def __init__(self):
-#         pg.sprite.Sprite.__init__(self)
-#         self.image = pg.draw.line(pg.display.get_surface(), config.BACKGROUND['rod_colour'],  )
+    def draw_cart_3d(self):
 
+        glColor(0, 1, 0)
+        glTranslate(self.cart_x_3D, 0, 0)
+        glPushMatrix()
+        glScalef(config.CART_WIDTH_3D, config.CART_HEIGHT_3D, config.CART_DEPTH_3D)
+        glutSolidCube(1)
+        glPopMatrix()
 
+    def update_cart(self):
 
+        current_time = pygame.time.get_ticks() / 1000.0
+        elapsed_time = current_time - self.previous_time
+
+        # Update cart position
+        
+        self.cart_x += config.SENSITIVITY_2D*self.cart_velocity * elapsed_time
+        self.cart_x_3D += config.SENSITIVITY_3D*self.cart_velocity * elapsed_time
+
+        self.previous_time = current_time
 

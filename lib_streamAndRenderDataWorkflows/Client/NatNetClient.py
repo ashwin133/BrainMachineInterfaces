@@ -28,7 +28,7 @@ import time
 import timeit
 import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions
 import lib_streamAndRenderDataWorkflows.Client.MoCapData as MoCapData
-
+from lib_streamAndRenderDataWorkflows.config_streaming import *
 
 def trace( *args ):
     # uncomment the one you want to use
@@ -1314,15 +1314,18 @@ class NatNetClient:
         if message_id == self.NAT_FRAMEOFDATA :
             trace( "Message ID  : %3.1d NAT_FRAMEOFDATA"% message_id )
             trace( "Packet Size : ", packet_size )
+            #start = time.perf_counter()
             import lib_streamAndRenderDataWorkflows.streamData as streamData
+
             offset_tmp, mocap_data = self.__unpack_mocap_data( data[offset:], packet_size, major, minor )
             # place mocap_data into shared memory here
-            streamData.dumpFrameDataIntoSharedMemory(simulate=False,sharedMemArray=self.shared_array,mocapData=mocap_data)
+            streamData.dumpFrameDataIntoSharedMemory(simulate=False,sharedMemArray=self.shared_array,mocapData=mocap_data,quaternionsUnit=quaternionsUnit)
             offset += offset_tmp
             #print(self.shared_array)
             #print("MoCap Frame: %d\n"%(mocap_data.prefix_data.frame_number))
             # get a string version of the data for output
             mocap_data_str=mocap_data.get_as_string()
+            #print(time.perf_counter()-start)
             if print_level >= 1:
                 print("%s\n"%mocap_data_str)
 

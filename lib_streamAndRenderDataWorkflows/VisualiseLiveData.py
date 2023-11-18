@@ -117,7 +117,7 @@ def simulateDisplayQuarternionData(varsPerDataType,noDataTypes,sharedMemoryName,
                 df = pd.DataFrame(shared_array)
             df_locations = [df.iloc[a,:] for a in range(0,df.shape[0])] # split rows into list
             df_locations_quaternionObjs = [quaternions.quaternionVector(loc = [a.iloc[4]/1000,a.iloc[5]/1000,a.iloc[6]/1000],quaternion=[a.iloc[3],a.iloc[0],a.iloc[1],a.iloc[2]]) for a in df_locations]
-            df_directions =  pd.DataFrame([q.qv_mult(q.quaternion,[0,-1,0]) for q in df_locations_quaternionObjs])
+            df_directions =  pd.DataFrame([q.qv_mult(q.quaternion,[-1,0,0]) for q in df_locations_quaternionObjs])
             dfPlot = pd.DataFrame({'x':df.iloc[:,4],'y':df.iloc[:,5],'z':df.iloc[:,6],'dirX':df_directions.iloc[:,0],'dirY':df_directions.iloc[:,1],'dirZ':df_directions.iloc[:,2]})
             maxX, maxY, maxZ = max(df.iloc[:,6].max(),maxX), max(df.iloc[:,4].max(),maxY), max(df.iloc[:,5].max(),maxZ)
             minX, minY, minZ = min(df.iloc[:,6].min(),minX), min(df.iloc[:,4].min(),minY), min(df.iloc[:,5].min(),minZ)
@@ -145,6 +145,77 @@ def simulateDisplayQuarternionData(varsPerDataType,noDataTypes,sharedMemoryName,
 
     plt.show()
     
+def simulateDisplayQuarternionDatav2_processed(varsPerDataType,noDataTypes,sharedMemoryName,frameLength = 1000,sim = False,idxesToPlot = None):
+    # varsPerDataType should be 7 for the quaternion data
+    # access the shared memory  
+    global maxX,maxY,maxZ
+    global minX,minY,minZ
+    maxX,maxY,maxZ = -10000,-10000,-10000
+    minX,minY,minZ = 10000,10000,10000
+
+    if sim == False:
+        dataEntries = varsPerDataType * noDataTypes
+        SHARED_MEM_NAME = sharedMemoryName
+        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=False)
+        shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
+        if idxesToPlot is not None:
+            df = pd.DataFrame(shared_array[idxesToPlot])
+        else:
+            df = pd.DataFrame(shared_array)
+    else:
+        shared_array = np.random.randint(0,5,size = (43,7))
+    # load the most recent shared memory onto a dataframe
+    
+    # we will get structure of database as rigidBody1 - [q_X,q_Y,q_Z,q_W,X,Y,Z]
+    if sim == False:
+        #df_locations = [df.iloc[a,:] for a in range(0,df.shape[0])] # split rows into list
+        #df_locations_quaternionObjs = [quaternions.quaternionVector(loc = [a.iloc[4]/1000,a.iloc[5]/1000,a.iloc[6]/1000],quaternion=[a.iloc[0],a.iloc[1],a.iloc[2],a.iloc[3]]) for a in df_locations]
+        #df_directions =  pd.DataFrame([q.qv_mult(q.quaternion,[-1,0,0]) for q in df_locations_quaternionObjs])
+        dfPlot = pd.DataFrame({'x':df.iloc[:,0],'y':df.iloc[:,1],'z':df.iloc[:,2],'dirX':df.iloc[:,3],'dirY':df.iloc[:,4],'dirZ':df.iloc[:,5]})
+        maxX, maxY, maxZ = max(df.iloc[:,4].max(),maxX), max(df.iloc[:,5].max(),maxY), max(df.iloc[:,6].max(),maxZ)
+        minX, minY, minZ = min(df.iloc[:,4].min(),minX), min(df.iloc[:,5].min(),minY), min(df.iloc[:,6].min(),minZ)
+    else:
+        dfPlot = pd.DataFrame(np.random.randint(0,5,size = (43,4)))
+    # for each set of points, find the location of where the vector should point assume for now that it starts in x direction
+
+
+
+    def update_graph(num):
+        # function to update location of points frame by frame
+        global maxX,maxY,maxZ
+        global minX,minY,minZ
+        if sim == False:
+            if idxesToPlot is not None:
+                df = pd.DataFrame(shared_array[idxesToPlot])
+            else:
+                df = pd.DataFrame(shared_array)
+            dfPlot = pd.DataFrame({'x':df.iloc[:,0],'y':df.iloc[:,1],'z':df.iloc[:,2],'dirX':df.iloc[:,3],'dirY':df.iloc[:,4],'dirZ':df.iloc[:,5]})
+
+            maxX, maxY, maxZ = max(df.iloc[:,6].max(),maxX), max(df.iloc[:,4].max(),maxY), max(df.iloc[:,5].max(),maxZ)
+            minX, minY, minZ = min(df.iloc[:,6].min(),minX), min(df.iloc[:,4].min(),minY), min(df.iloc[:,5].min(),minZ)
+        else:
+            dfPlot = pd.DataFrame(np.random.randint(0,5,size = (43,4)))
+        ax.clear()
+        print(dfPlot)
+        ax.quiver(dfPlot.iloc[:,0], dfPlot.iloc[:,1], dfPlot.iloc[:,2],dfPlot.iloc[:,3],dfPlot.iloc[:,4],dfPlot.iloc[:,5] ,color='r')
+        ax.axes.set_zlim3d(bottom= -1.5, top= 2) 
+        ax.axes.set_xlim3d(left=-2.5, right=2) 
+        ax.axes.set_ylim3d(bottom=-3, top=0) 
+
+
+    # set up the figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    
+    title = ax.set_title('Plotting markers')
+
+    # plot the first set of data
+    ax.quiver(dfPlot.iloc[:,0], dfPlot.iloc[:,1], dfPlot.iloc[:,2],dfPlot.iloc[:,3],dfPlot.iloc[:,4],dfPlot.iloc[:,5] ,color='r')
+    # set up the animation
+    ani = animation.FuncAnimation(fig, update_graph, frameLength, 
+                                interval=8, blit=False)
+
+    plt.show()
 
 
 
@@ -357,6 +428,178 @@ def simulateDisplayQuarternionData_v4(varsPerDataType,noDataTypes,sharedMemoryNa
     plt.show()
 
 
+def simulateDisplayQuarternionData_v5(varsPerDataType,noDataTypes,sharedMemoryName,frameLength = 1000,sim = False,idxesToPlot = None):
+    # varsPerDataType should be 7 for the quaternion data
+    # access the shared memory  
+    """
+    use this ver for testing if data is processed at time of data streaming
+    """
+    global maxX,maxY,maxZ
+    global minX,minY,minZ
+    global quaternionsUnit
+    global colourCode
+    maxX,maxY,maxZ = -10000,-10000,-10000
+    minX,minY,minZ = 10000,10000,10000
+
+    if sim == False:
+        dataEntries = varsPerDataType * noDataTypes
+        SHARED_MEM_NAME = sharedMemoryName
+        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=False)
+        shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
+        df = pd.DataFrame(shared_array[idxesToPlot])
+       
+        #dfPlot = pd.DataFrame({'x':df.iloc[:,5],'y':df.iloc[:,3],'z':df.iloc[:,4],'dirX':df.iloc[:,2],'dirY':df.iloc[:,0],'dirZ':df.iloc[:,1]})
+        maxX, maxY, maxZ = max(df.iloc[:,4].max(),maxX), max(df.iloc[:,5].max(),maxY), max(df.iloc[:,6].max(),maxZ)
+        minX, minY, minZ = min(df.iloc[:,4].min(),minX), min(df.iloc[:,5].min(),minY), min(df.iloc[:,6].min(),minZ)
+    else:
+        dfPlot = pd.DataFrame(np.random.randint(0,5,size = (43,4)))
+    # for each set of points, find the location of where the vector should point assume for now that it starts in x direction
+
+
+
+    def update_graph(num):
+        # function to update location of points frame by frame
+        global maxX,maxY,maxZ
+        global minX,minY,minZ
+        global quaternionsUnit
+        global colourCode
+        if sim == False:
+            df = pd.DataFrame(shared_array[idxesToPlot])
+            maxX, maxY, maxZ = max(df.iloc[:,0].max(),maxX), max(df.iloc[:,1].max(),maxY), max(df.iloc[:,2].max(),maxZ)
+            minX, minY, minZ = min(df.iloc[:,0].min(),minX), min(df.iloc[:,1].min(),minY), min(df.iloc[:,2].min(),minZ)
+        else:
+            dfPlot = pd.DataFrame(np.random.randint(0,5,size = (43,4)))
+        ax.clear()
+        print(df)
+        print(minX,maxX,minY,maxY,minZ,maxZ)
+        c1 = 0
+        c2 = 3
+        c3 = 5
+        c4 = 8
+        c5 = 9
+        c6 = 12
+        ax.quiver(df.iloc[:,0], df.iloc[:,1], df.iloc[:,2],df.iloc[:,3],df.iloc[:,4],df.iloc[:,5] ,color=colourCode)
+        #ax.quiver(dfPlot.iloc[0:c2,0], dfPlot.iloc[0:c2,1], dfPlot.iloc[0:c2,2],dfPlot.iloc[0:c2,3],dfPlot.iloc[0:c2,4],dfPlot.iloc[0:c2,5] ,color='b',length = 250)
+        #ax.quiver(dfPlot.iloc[c2:c3,0], dfPlot.iloc[c2:c3,1], dfPlot.iloc[c2:c3,2],dfPlot.iloc[c2:c3,3],dfPlot.iloc[c2:c3,4],dfPlot.iloc[c2:c3,5] ,color='g',length = 250)
+        #ax.quiver(dfPlot.iloc[c3:c4,0], dfPlot.iloc[c3:c4,1], dfPlot.iloc[c3:c4,2],dfPlot.iloc[c3:c4,3],dfPlot.iloc[c3:c4,4],dfPlot.iloc[c3:c4,5] ,color='r',length = 250)
+        #ax.quiver(dfPlot.iloc[c4:c5,0], dfPlot.iloc[c4:c5,1], dfPlot.iloc[c4:c5,2],dfPlot.iloc[c4:c5,3],dfPlot.iloc[c4:c5,4],dfPlot.iloc[c4:c5,5] ,color='c',length = 250)
+        #ax.quiver(dfPlot.iloc[c5:c6,0], dfPlot.iloc[c5:c6,1], dfPlot.iloc[c5:c6,2],dfPlot.iloc[c5:c6,3],dfPlot.iloc[c5:c6,4],dfPlot.iloc[c5:c6,5] ,color='m',length = 250)
+        #ax.quiver(dfPlot.iloc[c6:,0], dfPlot.iloc[c6:,1], dfPlot.iloc[c6:,2],dfPlot.iloc[c6:,3],dfPlot.iloc[c6:,4],dfPlot.iloc[c6:,5] ,color='y',length = 250)
+        ax.axes.set_zlim3d(bottom= minZ*1.2, top= maxZ*1.2) 
+        ax.axes.set_xlim3d(left=minX*1.2, right=maxY*1.2) 
+        ax.axes.set_ylim3d(bottom=minY*1.2, top=maxY*1.2) 
+        # ax.axes.set_zlim3d(bottom= -1.5, top= 2) 
+        # ax.axes.set_xlim3d(left=-2.5, right=2) 
+        # ax.axes.set_ylim3d(bottom=-3, top=0) 
+
+
+    # set up the figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    
+    title = ax.set_title('Plotting markers')
+
+    # plot the first set of data
+    #ax.quiver(dfPlot.iloc[:,0], dfPlot.iloc[:,1], dfPlot.iloc[:,2],dfPlot.iloc[:,3],dfPlot.iloc[:,4],dfPlot.iloc[:,5] ,color=colourCode)
+    c1 = 0
+    c2 = 3
+    c3 = 5
+    c4 = 8
+    c5 = 9
+    c6 = 12
+    ax.quiver(df.iloc[:,0], df.iloc[:,1], df.iloc[:,2],df.iloc[:,3],df.iloc[:,4],df.iloc[:,5] ,color=colourCode)
+    #ax.quiver(dfPlot.iloc[0:c2,0], dfPlot.iloc[0:c2,1], dfPlot.iloc[0:c2,2],dfPlot.iloc[0:c2,3],dfPlot.iloc[0:c2,4],dfPlot.iloc[0:c2,5] ,color='b')
+    #ax.quiver(dfPlot.iloc[c2:c3,0], dfPlot.iloc[c2:c3,1], dfPlot.iloc[c2:c3,2],dfPlot.iloc[c2:c3,3],dfPlot.iloc[c2:c3,4],dfPlot.iloc[c2:c3,5] ,color='g')
+    #ax.quiver(dfPlot.iloc[c3:c4,0], dfPlot.iloc[c3:c4,1], dfPlot.iloc[c3:c4,2],dfPlot.iloc[c3:c4,3],dfPlot.iloc[c3:c4,4],dfPlot.iloc[c3:c4,5] ,color='r')
+    #ax.quiver(dfPlot.iloc[c5:c6,0], dfPlot.iloc[c5:c6,1], dfPlot.iloc[c5:c6,2],dfPlot.iloc[c5:c6,3],dfPlot.iloc[c5:c6,4],dfPlot.iloc[c5:c6,5] ,color='m')
+    #ax.quiver(dfPlot.iloc[c4:c5,0], dfPlot.iloc[c4:c5,1], dfPlot.iloc[c4:c5,2],dfPlot.iloc[c4:c5,3],dfPlot.iloc[c4:c5,4],dfPlot.iloc[c4:c5,5] ,color='c')
+    #ax.quiver(dfPlot.iloc[c6:,0], dfPlot.iloc[c6:,1], dfPlot.iloc[c6:,2],dfPlot.iloc[c6:,3],dfPlot.iloc[c6:,4],dfPlot.iloc[c6:,5] ,color='y')
+# set up the animation
+    ani = animation.FuncAnimation(fig, update_graph, frameLength, 
+                                interval=8, blit=False)
+
+    plt.show()
+
+
+def simulateDisplayQuarternionData_v5(varsPerDataType,noDataTypes,sharedMemoryName,frameLength = 1000,sim = False,idxesToPlot = None):
+    # varsPerDataType should be 7 for the quaternion data
+    # access the shared memory  
+    """
+    use this ver for testing if data is processed at time of data streaming
+    """
+    global maxX,maxY,maxZ
+    global minX,minY,minZ
+    global quaternionsUnit
+    global colourCode
+    maxX,maxY,maxZ = -10000,-10000,-10000
+    minX,minY,minZ = 10000,10000,10000
+
+    if sim == False:
+        dataEntries = varsPerDataType * noDataTypes
+        SHARED_MEM_NAME = sharedMemoryName
+        shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=False)
+        shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
+        df = pd.DataFrame(shared_array[idxesToPlot])
+       
+        #dfPlot = pd.DataFrame({'x':df.iloc[:,5],'y':df.iloc[:,3],'z':df.iloc[:,4],'dirX':df.iloc[:,2],'dirY':df.iloc[:,0],'dirZ':df.iloc[:,1]})
+        maxX, maxY, maxZ = max(df.iloc[:,4].max(),maxX), max(df.iloc[:,5].max(),maxY), max(df.iloc[:,6].max(),maxZ)
+        minX, minY, minZ = min(df.iloc[:,4].min(),minX), min(df.iloc[:,5].min(),minY), min(df.iloc[:,6].min(),minZ)
+    else:
+        dfPlot = pd.DataFrame(np.random.randint(0,5,size = (43,4)))
+    # for each set of points, find the location of where the vector should point assume for now that it starts in x direction
+
+
+
+    def update_graph(num):
+        # function to update location of points frame by frame
+        global maxX,maxY,maxZ
+        global minX,minY,minZ
+        global quaternionsUnit
+        global colourCode
+        if sim == False:
+            df = pd.DataFrame(shared_array[idxesToPlot])
+            maxX, maxY, maxZ = max(df.iloc[:,0].max(),maxX), max(df.iloc[:,1].max(),maxY), max(df.iloc[:,2].max(),maxZ)
+            minX, minY, minZ = min(df.iloc[:,0].min(),minX), min(df.iloc[:,1].min(),minY), min(df.iloc[:,2].min(),minZ)
+        else:
+            dfPlot = pd.DataFrame(np.random.randint(0,5,size = (43,4)))
+        ax.clear()
+        print(df)
+        print(minX,maxX,minY,maxY,minZ,maxZ)
+        c1 = 0
+        c2 = 3
+        c3 = 5
+        c4 = 8
+        c5 = 9
+        c6 = 12
+        ax.quiver(df.iloc[:,0], df.iloc[:,1], df.iloc[:,2],df.iloc[:,3],df.iloc[:,4],df.iloc[:,5] ,color=colourCode)
+        #ax.quiver(dfPlot.iloc[0:c2,0], dfPlot.iloc[0:c2,1], dfPlot.iloc[0:c2,2],dfPlot.iloc[0:c2,3],dfPlot.iloc[0:c2,4],dfPlot.iloc[0:c2,5] ,color='b',length = 250)
+        #ax.quiver(dfPlot.iloc[c2:c3,0], dfPlot.iloc[c2:c3,1], dfPlot.iloc[c2:c3,2],dfPlot.iloc[c2:c3,3],dfPlot.iloc[c2:c3,4],dfPlot.iloc[c2:c3,5] ,color='g',length = 250)
+        #ax.quiver(dfPlot.iloc[c3:c4,0], dfPlot.iloc[c3:c4,1], dfPlot.iloc[c3:c4,2],dfPlot.iloc[c3:c4,3],dfPlot.iloc[c3:c4,4],dfPlot.iloc[c3:c4,5] ,color='r',length = 250)
+        #ax.quiver(dfPlot.iloc[c4:c5,0], dfPlot.iloc[c4:c5,1], dfPlot.iloc[c4:c5,2],dfPlot.iloc[c4:c5,3],dfPlot.iloc[c4:c5,4],dfPlot.iloc[c4:c5,5] ,color='c',length = 250)
+        #ax.quiver(dfPlot.iloc[c5:c6,0], dfPlot.iloc[c5:c6,1], dfPlot.iloc[c5:c6,2],dfPlot.iloc[c5:c6,3],dfPlot.iloc[c5:c6,4],dfPlot.iloc[c5:c6,5] ,color='m',length = 250)
+        #ax.quiver(dfPlot.iloc[c6:,0], dfPlot.iloc[c6:,1], dfPlot.iloc[c6:,2],dfPlot.iloc[c6:,3],dfPlot.iloc[c6:,4],dfPlot.iloc[c6:,5] ,color='y',length = 250)
+        ax.axes.set_zlim3d(bottom= minZ*1.2, top= maxZ*1.2) 
+        ax.axes.set_xlim3d(left=minX*1.2, right=maxY*1.2) 
+        ax.axes.set_ylim3d(bottom=minY*1.2, top=maxY*1.2) 
+        # ax.axes.set_zlim3d(bottom= -1.5, top= 2) 
+        # ax.axes.set_xlim3d(left=-2.5, right=2) 
+        # ax.axes.set_ylim3d(bottom=-3, top=0) 
+
+
+    # set up the figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    
+    title = ax.set_title('Plotting markers')
+
+
+    ax.quiver(df.iloc[:,0], df.iloc[:,1], df.iloc[:,2],df.iloc[:,3],df.iloc[:,4],df.iloc[:,5] ,color=colourCode)
+
+    ani = animation.FuncAnimation(fig, update_graph, frameLength, 
+                                interval=8, blit=False)
+
+    plt.show()
+
 
 def calculateBodyPartPosVectors(varsPerDataType,noDataTypes,sharedMemoryName,frameLength = 1000,sim = False,idxesToPlot = None):
     # varsPerDataType should be 7 for the quaternion data
@@ -454,8 +697,8 @@ if __name__ == "__main__":
     #simulateDisplayQuarternionData(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = [48]) # right shin
     #simulateDisplayQuarternionData(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = [49]) # right foot
     #simulateDisplayQuarternionData(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = [50]) # right toe
-    #simulateDisplayQuarternionData_v3(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts)
-    
+    simulateDisplayQuarternionData_v5(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts) # use v5 for post processed data
+    #simulateDisplayQuarternionDatav2_processed(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = [27]) # run to test data is being processed at streaming time
     # run this for the game
-    calculateBodyPartPosVectors(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts)
+    #calculateBodyPartPosVectors(7,51,sharedMemoryName= 'Test Rigid Body',idxesToPlot = simpleBodyParts)
     print("Program ended")

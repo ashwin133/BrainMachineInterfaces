@@ -28,6 +28,7 @@ import time
 from lib_streamAndRenderDataWorkflows.Client.NatNetClient import NatNetClient
 import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions
 import lib_streamAndRenderDataWorkflows.Client.MoCapData as MoCapData
+from lib_streamAndRenderDataWorkflows.config_streaming import *
 
 from multiprocessing import shared_memory
 import numpy as np

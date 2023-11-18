@@ -11,6 +11,7 @@ import numpy as np
 from multiprocessing import shared_memory
 import atexit
 import time
+from lib_streamAndRenderDataWorkflows import quaternions
 
 sys.path.insert(0,'/Users/rishitabanerjee/Desktop/BrainMachineInterfaces/')
 
@@ -18,8 +19,13 @@ import lib_streamAndRenderDataWorkflows.Client.NatNetClient as NatNetClient
 import lib_streamAndRenderDataWorkflows.Client.DataDescriptions as DataDescriptions
 import lib_streamAndRenderDataWorkflows.Client.MoCapData as MoCapData
 import lib_streamAndRenderDataWorkflows.Client.PythonSample as PythonSample
-
+from lib_streamAndRenderDataWorkflows.config_streaming import *
 bodyType_ = None
+
+# define some constants
+
+
+# function defs below
 
 
 def fetchLiveData(sharedArray, sharedBlock, simulate = False,simulatedDF = None, timeout = 20.000):
@@ -98,7 +104,7 @@ def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker'
     return shared_block,shared_array
     
 
-def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None,mocapData = None):
+def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None,mocapData = None,quaternionsUnit = None):
     if simulate:
         rowData = simulatedDF.iloc[frame,:][2:]
         lengthRowData = rowData.shape[0]
@@ -160,13 +166,23 @@ def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,
             colIdx = 0
             for skeletonIdx in range(0,len(skeletonData)):
                 skeleton = skeletonData[skeletonIdx].rigid_body_list
-                for rigidBody in skeleton:
-                    sharedMemArray[colIdx][0:4] = rigidBody.rot
-                    sharedMemArray[colIdx][4:7] = rigidBody.pos
-                    colIdx += 1
-            
+                if False: # default method of pushing all rigid  bodies to shared mem without any processing
+                    for rigidBody in skeleton:
+                        sharedMemArray[colIdx][0:4] = rigidBody.rot
+                        sharedMemArray[colIdx][4:7] = rigidBody.pos
+                        colIdx += 1
+                
+                else:  # feature to stream rigid body data as vectors
+                    for i,idx in enumerate(simpleBodyParts):
+                        q = quaternions.quaternionVector(loc = list(skeleton[idx].pos),quaternion= [skeleton[idx].rot[3],skeleton[idx].rot[0],skeleton[idx].rot[1],skeleton[idx].rot[2]])
+                        vector = q.qv_mult(q.quaternion,quaternionsUnit[i]) 
+                        sharedMemArray[idx][0:3] = skeleton[idx].pos
+                        sharedMemArray[idx][3:6] = vector
+                        #print(sharedMemArray)
+
         elif bodyType_ == 'marker_set':
             pass
+    
 
 
 

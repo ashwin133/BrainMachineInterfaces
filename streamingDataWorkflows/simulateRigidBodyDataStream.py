@@ -31,17 +31,31 @@ from lib_streamAndRenderDataWorkflows import streamData, VisualiseLiveData
 typeData = "Bone Marker"
 
 # feed in location of csv data to extract dataframe 
+# try:        
+#     dataLocation = "Data/Rishita-jumping jacks 2023-10-18.csv"
+#     simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation,includeCols='Bone')
+# except FileNotFoundError: # if file is run from location of file this is needed
+#     try:
+#         dataLocation = "Rishita-jumping jacks 2023-10-18.csv"
+#         simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone')
+#     except:
+#         try:
+#             dataLocation = "../Data/Rishita-jumping jacks 2023-10-18.csv"
+#             simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone')
+#         except:
+#             raise Exception('File not found')
+        
 try:        
-    dataLocation = "Data/Rishita-jumping jacks 2023-10-18.csv"
-    simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation,includeCols='Bone')
+    dataLocation = "Data/presentation_demo_rigidBodies.csv"
+    simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation,includeCols='Bone',preprocessed=False)
 except FileNotFoundError: # if file is run from location of file this is needed
     try:
-        dataLocation = "Rishita-jumping jacks 2023-10-18.csv"
-        simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone')
+        dataLocation = "presentation_demo_rigidBodies.csv"
+        simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone',preprocessed=False)
     except:
         try:
-            dataLocation = "../Data/Rishita-jumping jacks 2023-10-18.csv"
-            simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone')
+            dataLocation = "../Data/presentation_demo_rigidBodies.csv"
+            simulatedDF = streamData.extractDataFrameFromCSV(dataLocation = dataLocation, includeCols='Bone',preprocessed=False)
         except:
             raise Exception('File not found')
 
@@ -49,11 +63,12 @@ except FileNotFoundError: # if file is run from location of file this is needed
 # initialise shared memory
 shared_Block,sharedArray = streamData.defineSharedMemory(sharedMemoryName= 'Test Rigid Body', dataType= "Bone", noDataTypes= 51)
 
+
 print("Starting to dump data into shared memory")
 #dump latest data into shared memory
 for i in range(0,simulatedDF.shape[0]):
-    streamData.dumpFrameDataIntoSharedMemory(simulate=True, simulatedDF= simulatedDF, frame = i, sharedMemArray=sharedArray)
-    time.sleep(0.008) # change this later
+    streamData.dumpFrameDataIntoSharedMemory(simulate=True, simulatedDF= simulatedDF, frame = i, sharedMemArray=sharedArray,preprocessedSharedArray=True)
+    time.sleep(0.0125) # change this later
     if i%100 == 0:
         print("Dumped Frame {} into shared memory".format(i))
         print(sharedArray)

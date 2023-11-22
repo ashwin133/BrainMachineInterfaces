@@ -104,11 +104,16 @@ def defineSharedMemory(sharedMemoryName = 'Motive Dump',dataType = 'Bone Marker'
     return shared_block,shared_array
     
 
-def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None,mocapData = None,quaternionsUnit = None):
+def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,sharedMemArray = None,mocapData = None,quaternionsUnit = None,preprocessedSharedArray = False):
     if simulate:
-        rowData = simulatedDF.iloc[frame,:][2:]
+        if preprocessedSharedArray:
+            rowData =np.array(simulatedDF.iloc[frame,:][0:])
+        else:
+            rowData = simulatedDF.iloc[frame,:][2:]
         lengthRowData = rowData.shape[0]
         noTypes,noDims = sharedMemArray.shape
+        if preprocessedSharedArray: 
+            noDims = 6
         count = 0
         i = 0
         while count < lengthRowData:
@@ -195,60 +200,63 @@ def dumpFrameDataIntoSharedMemory(simulate = False,simulatedDF = None,frame = 0,
 def retrieveSharedMemoryData(sharedMemoryName = 'MotiveDump'):
     pass
 
-def extractDataFrameFromCSV(dataLocation,includeCols = 'Bone Marker'):
+def extractDataFrameFromCSV(dataLocation,includeCols = 'Bone Marker',preprocessed = True):
     """
     @PARAM: dataLocation: relative path to csv data
     @PARAM: includeCols: Includes columns of a specific type, e.g. Bone, Bone Marker
 
     RETURN: a dataframe 
     """
+    if preprocessed is True:
+        # extract the experimental data onto a df, test file will check whether 
+        # rows skipped will need to be updated in the future
+        df = pd.read_csv(dataLocation,skiprows=[0,1,4],header = None)
 
-    # extract the experimental data onto a df, test file will check whether 
-    # rows skipped will need to be updated in the future
-    df = pd.read_csv(dataLocation,skiprows=[0,1,4],header = None)
+        # the first row contains the type of each marker, i.e. marker/bone etc.
+        markerType = df.iloc[0].values
+        # the second row has the names of each part so extract this
+        bodyParts = df.iloc[1].values
+        # extract the kinematic nature of each column (rotation or position)
+        kinematicType = df.iloc[2].values
+        # extract the variable in fourth row
+        kinematicVariable = df.iloc[3].values
 
-    # the first row contains the type of each marker, i.e. marker/bone etc.
-    markerType = df.iloc[0].values
-    # the second row has the names of each part so extract this
-    bodyParts = df.iloc[1].values
-    # extract the kinematic nature of each column (rotation or position)
-    kinematicType = df.iloc[2].values
-    # extract the variable in fourth row
-    kinematicVariable = df.iloc[3].values
-
-    # create a header array to store a simplified header for each column
-    headerArray = []
-    headerArray.append('Frame')
-    headerArray.append('Time (Seconds)')
-    
-    # create an index to find when to truncate column
-    colStartTruncateIndex = None
-    colEndTruncateIndex = None
-
-
-    for i in range(2,df.shape[1]):
-        currHeader = bodyParts[i] + ' ' + kinematicType[i] + ' ' + kinematicVariable[i]
-        headerArray.append(currHeader)
-        if includeCols == None or includeCols == markerType[i]:
-            if colStartTruncateIndex == None:
-                colStartTruncateIndex = i
-        elif colStartTruncateIndex is not None and colEndTruncateIndex == None:
-            colEndTruncateIndex = i
+        # create a header array to store a simplified header for each column
+        headerArray = []
+        headerArray.append('Frame')
+        headerArray.append('Time (Seconds)')
+        
+        # create an index to find when to truncate column
+        colStartTruncateIndex = None
+        colEndTruncateIndex = None
 
 
-    # now create dataframe removing the previous rows of metadata and reassigning the
-    # column titles
+        for i in range(2,df.shape[1]):
+            currHeader = bodyParts[i] + ' ' + kinematicType[i] + ' ' + kinematicVariable[i]
+            headerArray.append(currHeader)
+            if includeCols == None or includeCols == markerType[i]:
+                if colStartTruncateIndex == None:
+                    colStartTruncateIndex = i
+            elif colStartTruncateIndex is not None and colEndTruncateIndex == None:
+                colEndTruncateIndex = i
 
-    # include only the frame data
-    df = df.iloc[4:]
 
-    # rename columns to a more descriptive label: body part, kinematic type, kinematic variable
-    df.columns = headerArray
-    df = df.astype(float)
-    if includeCols != None:
-        df_firstCols = df.iloc[:,:2]
-        if colStartTruncateIndex is None: colStartTruncateIndex, colEndTruncateIndex = 0,0
-        df = df.iloc[:,colStartTruncateIndex:colEndTruncateIndex]
-        df = pd.concat([df_firstCols,df],axis=1)
+        # now create dataframe removing the previous rows of metadata and reassigning the
+        # column titles
+
+        # include only the frame data
+        df = df.iloc[4:]
+
+        # rename columns to a more descriptive label: body part, kinematic type, kinematic variable
+        df.columns = headerArray
+        df = df.astype(float)
+        if includeCols != None:
+            df_firstCols = df.iloc[:,:2]
+            if colStartTruncateIndex is None: colStartTruncateIndex, colEndTruncateIndex = 0,0
+            df = df.iloc[:,colStartTruncateIndex:colEndTruncateIndex]
+            df = pd.concat([df_firstCols,df],axis=1)
+    else:
+        df = pd.read_csv(dataLocation,header = None)
+        df = df.iloc[1:,1:]
 
     return df

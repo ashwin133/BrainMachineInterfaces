@@ -10,6 +10,7 @@ import sys
 import os
 from multiprocessing import shared_memory
 import numpy as np
+import time as time_
 
 # import variables and objects used and run setup
 from variables import *
@@ -17,7 +18,7 @@ from objects import *
 from setup import *
 
 sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
-
+avgLoopTimes = []
 
 
 while main:
@@ -34,7 +35,10 @@ while main:
                 main = False
         if event.type == pygame.KEYDOWN:
             if event.key == ord('g') and pygame.time.get_ticks() > timeCursorAppears and cursorAppearLatch == False:
+                
                 time = pygame.time.get_ticks()
+                endTime = time_.perf_counter()
+                avgLoopTimes.append(endTime-timeCursorAppears)
                 print("Reaction time is {}".format(time - timeCursorAppears))
                 cursorAppearLatch = True
                 reactionTimes.append(pygame.time.get_ticks() - time)
@@ -46,6 +50,8 @@ while main:
                 print('G released')
                 
             if event.key == ord('q'):
+                print(avgLoopTimes)
+                print(np.average(np.array(avgLoopTimes)))
                 pygame.quit()
                 sys.exit()
                 main = False
@@ -58,6 +64,7 @@ while main:
     # draw the cursor
     world.fill(BLUE)
     if pygame.time.get_ticks() > timeCursorAppears:
+        timeCursorAppears = time_.perf_counter()
         player_list.draw(world) # draw cursor after
     # advance clock and display
     pygame.display.flip()

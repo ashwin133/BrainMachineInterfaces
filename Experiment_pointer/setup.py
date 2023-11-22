@@ -14,9 +14,14 @@ import numpy as np
 try:
     np.load(readLocation)
 except FileNotFoundError:
-    readLocation = '../' + readLocation
-    np.load(readLocation)
-    
+    try:
+        readLocation_ = '../' + readLocation
+        np.load(readLocation_)
+        readLocation = readLocation_
+    except FileNotFoundError:
+        readLocation = 'Experiment_pointer/' + readLocation
+        np.load(readLocation)
+        
 
 rightHandIndex = processedRigidBodyParts.index('RHand')
 
@@ -69,7 +74,8 @@ def endProgram(boxHitTimes,player):
         
         np.savez(writeDataLocation,dataStore = player.datastore,targetBoxLocs = targetBox.writeDatastore,
                  targetBoxHitTimes = boxHitTimes,targetBoxAppearTimes = player.targetAppearTimes,
-                 allBodyPartsData = player.allBodyPartsDatastore)
+                 allBodyPartsData = player.allBodyPartsDatastore,boxSizeVarName = (boxHeight,boxWidth),
+                 metadataLocation = metadataLocation)
     pygame.quit()
     sys.exit()
     main = False
@@ -88,3 +94,7 @@ if calibrated is False and FETCHDATAFROMREALTIME:
 else:
     targetStartTime = 2000
     player.targetStartTime = 2000
+
+if LATENCY_TEST:
+    player.latencyTestActivated = True
+    targetBox.latencyTestActivated = True

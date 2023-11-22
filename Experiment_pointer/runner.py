@@ -103,9 +103,9 @@ while main:
 
 
 
-    # i.e. RESETS THE TARGET 2 SECONDS AFTER USER REACHES
+    # i.e. RESETS THE TARGET 3 SECONDS AFTER USER REACHES
     
-    if timeToReach is not None and pygame.time.get_ticks() > timeToReach + 2000:
+    if timeToReach is not None and pygame.time.get_ticks() > timeToReach + 3000:
         # reset timeToReach to None as this is what shows the user has reached the target
         timeToReach = None
         # respawn the box

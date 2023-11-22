@@ -29,7 +29,10 @@ class Debugger():
                 for i in range(length//2):
                     print(var[2*i] , ": ",var[2*i+1])
                 
-
+class BoxCollections():
+    """
+    class to store all boxes
+    """
 class Box():
     """
     Contains properties for a box
@@ -46,6 +49,8 @@ class Box():
         self.readData = False
         self.writeData = False
         self.debugger = debugger
+        self.latencyTestActivated = False
+        
     
     def prepareForDataWrite(self,boxLocs):
         # tell object program is writing data
@@ -90,13 +95,17 @@ class Box():
         else:
             self.boxColor = resetColor
         if self.readData is not True:
-            self.leftCornerXBoxLoc = np.random.randint(100,500)
-            self.leftCornerYBoxLoc = np.random.randint(100,400)
-            if self.writeData is True:
-                # write new locations to datastore
-                self.writeDatastore[self.writeDataStoreIteration,0] = self.leftCornerXBoxLoc
-                self.writeDatastore[self.writeDataStoreIteration,1] = self.leftCornerYBoxLoc
-                self.writeDataStoreIteration += 1
+            if self.latencyTestActivated is True: 
+                self.leftCornerXBoxLoc = 0
+                self.leftCornerYBoxLoc = 300
+            else:
+                self.leftCornerXBoxLoc = np.random.randint(100,1000)
+                self.leftCornerYBoxLoc = np.random.randint(100,700)
+                if self.writeData is True:
+                    # write new locations to datastore
+                    self.writeDatastore[self.writeDataStoreIteration,0] = self.leftCornerXBoxLoc
+                    self.writeDatastore[self.writeDataStoreIteration,1] = self.leftCornerYBoxLoc
+                    self.writeDataStoreIteration += 1
 
 
         else:
@@ -129,6 +138,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.movex = 0 # move along X
         self.movey = 0 # move along Y
+        self.latencyTestActivated = False
         self.rightHandIndex = 27
         self.calibrateUsingRightHand = True
         self.userMaxXValue = -10000

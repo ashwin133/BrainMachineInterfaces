@@ -388,6 +388,7 @@ def simulateDisplayQuarternionData_v4(varsPerDataType,noDataTypes,sharedMemoryNa
         c4 = 8
         c5 = 9
         c6 = 12
+        plt.axis('off')
         ax.quiver(dfPlot.iloc[:,0], dfPlot.iloc[:,1], dfPlot.iloc[:,2],dfPlot.iloc[:,3],dfPlot.iloc[:,4],dfPlot.iloc[:,5] ,color=colourCode,length = 250)
         #ax.quiver(dfPlot.iloc[0:c2,0], dfPlot.iloc[0:c2,1], dfPlot.iloc[0:c2,2],dfPlot.iloc[0:c2,3],dfPlot.iloc[0:c2,4],dfPlot.iloc[0:c2,5] ,color='b',length = 250)
         #ax.quiver(dfPlot.iloc[c2:c3,0], dfPlot.iloc[c2:c3,1], dfPlot.iloc[c2:c3,2],dfPlot.iloc[c2:c3,3],dfPlot.iloc[c2:c3,4],dfPlot.iloc[c2:c3,5] ,color='g',length = 250)
@@ -402,6 +403,7 @@ def simulateDisplayQuarternionData_v4(varsPerDataType,noDataTypes,sharedMemoryNa
 
     # set up the figure
     fig = plt.figure()
+    
     ax = fig.add_subplot(111, projection='3d')
     
     title = ax.set_title('Plotting markers')
@@ -424,7 +426,7 @@ def simulateDisplayQuarternionData_v4(varsPerDataType,noDataTypes,sharedMemoryNa
 # set up the animation
     ani = animation.FuncAnimation(fig, update_graph, frameLength, 
                                 interval=8, blit=False)
-
+    plt.axis('off')
     plt.show()
 
 

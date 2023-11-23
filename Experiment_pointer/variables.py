@@ -48,11 +48,11 @@ debugMode = True
 timeToReach = None
 
 # DECIDE WHETHER TO READ ONLINE DATA AND WHETHER TO READ OR RECORD DATA
-FETCHDATAFROMREALTIME = False
-recordData = False
+FETCHDATAFROMREALTIME = True
+recordData = True
 readData = False
-readLocation = 'PointerExperimentData/22_11_ashTrial1.npz'
-writeDataLocation = 'PointerExperimentData/22_11_ashTrial1.npz'
+readLocation = 'PointerExperimentData/23_11_ashTrial7_45offplane_120s.npz'
+writeDataLocation = 'PointerExperimentData/23_11_ashTrial7_45offplane_120s.npz'
 metadataLocation = 'metadata'
 metadata = {'MetaData:' 'Pres '
 
@@ -67,7 +67,7 @@ boxSizeVarName = 'boxSize'
 cursorMotionDatastoreLocation = 'CursorMotion' 
 gameEngineLocation = 'GameEngine'
 #time to run program
-timeProgram = 30 # in seconds
+timeProgram = 120 # in seconds
 testMode = False
 
 

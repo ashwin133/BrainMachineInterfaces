@@ -101,7 +101,7 @@ def endProgram(gameEngine,player,targetBox,debugger):
             np.savez('test',gameEngine.boxHitTimes)
             print('box hit times:', gameEngine.boxHitTimes)
             player.processData()
-            
+            del gameEngine.world
             np.savez(gameEngine.writeDataLocation,dataStore = player.datastore,targetBoxLocs = targetBox.writeDatastore,
                     targetBoxHitTimes = gameEngine.boxHitTimes,targetBoxAppearTimes = player.targetAppearTimes,
                     allBodyPartsData = player.allBodyPartsDatastore,boxSizeVarName = (gameEngine.boxHeight,gameEngine.boxWidth),

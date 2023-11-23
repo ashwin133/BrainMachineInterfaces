@@ -7,9 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 try:
-    data = np.load('ashwin_trial2_fps_80.npz') # for siddhi trial 3 the boxes were 60 x 60
+    data = np.load('PointerExperimentData/23_11_ashTrial1.npz') # for siddhi trial 3 the boxes were 60 x 60
 except FileNotFoundError:
-    data = np.load('Experiment_pointer/ashwin_trial2_fps_80.npz')
+    data = np.load('Experiment_pointer/PointerExperimentData/23_11_ashTrial1.npz')
 
 targetBoxAppearTimes = np.array(data['targetBoxAppearTimes'])
 targetBoxHitTimes = np.array(data['targetBoxHitTimes'])

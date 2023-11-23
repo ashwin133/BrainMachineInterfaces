@@ -364,6 +364,7 @@ class Player(pygame.sprite.Sprite):
 
 
     def calcCursorPosFromHandData(self):
+        print(self.xRange,self.yRange)
         normalised_x_val = 1 -  (self.rightHandPos[1] - self.userMinXValue) / self.xRange
         normalised_y_Val = 1 - (self.rightHandPos[2] - self.userMinYValue) / self.yRange
         #print(normalised_x_val)

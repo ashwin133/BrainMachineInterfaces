@@ -20,10 +20,10 @@ rigidBodyPartsDict = {'Pelvis': [1,(0,0,1),'b'], 'Ab': [1,(0,0,1),'b'], 'Chest':
                     'LIndex3': [0], 'LMiddle1': [0], 'LMiddle2': [0], 'LMiddle3': [0], 'LRing1': [0], 'LRing2': [0], 'LRing3': [0], 
                     'LPinky1': [0], 'LPinky2': [0], 'LPinky3': [0], 'RShoulder': [1,(-1,0,0),'m'], 'RUArm': [1,(-1,0,0),'m'], 'RFArm': [1,(-1,0,0),'m'], 'RHand': [1,(-1,0,0),'y'], 'RThumb1': [0], 
                     'RThumb2': [0], 'RThumb3': [0], 'RIndex1': [0], 'RIndex2': [0], 'RIndex3': [0], 'RMiddle1': [0], 'RMiddle2': [0], 'RMiddle3': [0], 
-                    'RRing1': [0], 'RRing2': [0], 'RRing3': [0], 'RPinky1': [0], 'RPinky2': [0], 'RPinky3': [0], 'LThigh': [0], 'LShin': [0], 
-                    'LFoot': [0], 'LToe': [0], 'RThigh': [0], 'RShin': [0], 'RFoot': [0], 'RToe': [0]}
-
-simpleBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27] # list of body parts to extract
+                    'RRing1': [0], 'RRing2': [0], 'RRing3': [0], 'RPinky1': [0], 'RPinky2': [0], 'RPinky3': [0], 'LThigh': [1,(0,-1,0),'c'], 'LShin':  [1,(0,-1,0),'c'], 
+                    'LFoot':  [1,(0,-1,0),'c'], 'LToe': [0], 'RThigh':  [1,(0,-1,0),'c'], 'RShin':  [1,(0,-1,0),'c'], 'RFoot':  [1,(0,-1,0),'c'], 'RToe': [0]}
+  
+simpleBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] # list of body parts to extract
 
 #simpleBodyPartLabels = rigidBodyParts[simpleBodyParts]
 

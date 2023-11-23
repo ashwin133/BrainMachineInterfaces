@@ -11,8 +11,63 @@ from multiprocessing import shared_memory
 import time
 import sys 
 
-import variables
+
 sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
+
+class gameStatistics():
+    """
+    Used to store general game information
+
+    """
+    def __init__(self,worldx,worldy,LATENCY_TEST,fps,ani,colours,main,timeToReach,
+                 FETCHDATAFROMREALTIME,recordData,readData,readLocation,writeDataLocation,
+                 metadataLocation,metadata,handDataReadVarName,targetBoxReadVarName,
+                 targetBoxTimeAppearsVarName,targetBoxTimeHitsVarName,allBodyDataVarName,
+                 boxSizeVarName,timeProgram,reachedBoxStatus,reachedBoxLatch,calibrated,
+                 boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
+                 leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode):
+        self.world = None
+        self.calibrationTimeEnd = None
+        self.targetStartTime = None
+        self.programRunTime = None
+        self.steps = None
+        self.noTimeStamps = None
+        self.worldx = worldx
+        self.worldy = worldy
+        self.LATENCY_TEST = LATENCY_TEST
+        self.fps = fps
+        self.ani = ani
+        self.colours = colours
+        self.main = main
+        self.timeToReach = timeToReach
+        self.FETCHDATAFROMREALTIME = FETCHDATAFROMREALTIME
+        self.recordData = recordData
+        self.readData = readData
+        self.readLocation = readLocation
+        self.writeDataLocation = writeDataLocation
+        self.metadataLocation = metadataLocation
+        self.metadata = metadata
+        self.handDataReadVarName = handDataReadVarName
+        self.targetBoxReadVarName = targetBoxReadVarName
+        self.targetBoxTimeAppearsVarName = targetBoxTimeAppearsVarName
+        self.targetBoxTimeHitsVarName = targetBoxTimeHitsVarName
+        self.allBodyDataVarName = allBodyDataVarName
+        self.boxSizeVarName = boxSizeVarName
+        self.timeProgram = timeProgram
+        self.reachedBoxStatus = reachedBoxStatus
+        self.reachedBoxLatch = reachedBoxLatch
+        self.calibrated = calibrated
+        self.boxHitTimes = boxHitTimes
+        self.enforce = enforce
+        self.offline = offline
+        self.positions = positions
+        self.processedRigidBodyParts = processedRigidBodyParts
+        self.leftCornerXBoxLoc = leftCornerXBoxLoc
+        self.leftCornerYBoxLoc = leftCornerYBoxLoc
+        self.boxWidth = boxWidth
+        self.boxHeight = boxHeight
+        self.testMode = testMode
+
 
 class Debugger():
     """
@@ -20,6 +75,7 @@ class Debugger():
     """
     def __init__(self,debugLevel):
         self.debugLevel= debugLevel
+        self.test = False
 
     def disp(self,debugLevel,*var,frequency = None):
         length = len(var)
@@ -28,6 +84,13 @@ class Debugger():
                 print('Time:', pygame.time.get_ticks())
                 for i in range(length//2):
                     print(var[2*i] , ": ",var[2*i+1])
+
+    def returnDebuggingOutput(self,dataStore,targetBoxLocs, targetBoxHitTimes ,targetBoxAppearTimes,allBodyPartsData,boxSizeVarName,metadata,pointerLocs,gameEngine):
+        if self.test:
+            return {'Hand Motion':dataStore, 'Target Box Locations': targetBoxLocs,'Target Box Hit times': targetBoxHitTimes ,
+                    'Target Box Appear Times' : targetBoxAppearTimes, 'Rigid Body Vectors Datastore': allBodyPartsData,
+                    'Box Size': boxSizeVarName, 'Metadata': metadata,' Pointer Location' : pointerLocs, 'GameEngine Metadata': gameEngine}
+
                 
 class BoxCollections():
     """
@@ -69,6 +132,7 @@ class Box():
         data = np.load(readLocation)
         self.readDatastore = data[readVarName]
         self.readDataStoreIteration = 0
+        
         self.debugger.disp(3,'Old Box left corner x loc', self.leftCornerXBoxLoc, 'Old box left corner y loc', self.leftCornerYBoxLoc)
         # read the location of the first box
         self.leftCornerXBoxLoc = self.readDatastore[self.readDataStoreIteration,0]
@@ -77,7 +141,6 @@ class Box():
         self.dimensions = (self.leftCornerXBoxLoc, self.leftCornerYBoxLoc, self.boxWidth, self.boxHeight)
         self.debugger.disp(3,'New Box left corner x loc', self.leftCornerXBoxLoc, 'New box left corner y loc', self.leftCornerYBoxLoc)
         # update box position for cursor 
-        
         player.targetBoxXmin = self.leftCornerXBoxLoc
         player.targetBoxXmax = self.leftCornerXBoxLoc + self.boxWidth
         player.targetBoxYmin = self.leftCornerYBoxLoc
@@ -114,8 +177,11 @@ class Box():
             self.leftCornerXBoxLoc = self.readDatastore[self.readDataStoreIteration,0]
             self.leftCornerYBoxLoc = self.readDatastore[self.readDataStoreIteration,1]
             self.readDataStoreIteration += 1
+        #self.debugger.disp(3,'all box dims',self.readDatastore)
+       
         self.dimensions = (self.leftCornerXBoxLoc, self.leftCornerYBoxLoc, self.boxWidth, self.boxHeight)
-    
+        #self.debugger.disp(3,'actual box dimensions',self.dimensions)
+        #self.debugger.disp(3,'theoretical box dimensions',self.readDatastore[self.readDataStoreIteration-1])
 
 
 class Player(pygame.sprite.Sprite):
@@ -158,6 +224,7 @@ class Player(pygame.sprite.Sprite):
         self.rightHandPos = None
         self.rightHandDir = None
         self.readData = False
+        self.writeData = False
 
         # set properties of the target box
         self.boxColor = targetBox.boxColor
@@ -184,6 +251,7 @@ class Player(pygame.sprite.Sprite):
         """
         Updates cursor position from keypad
         """
+        
         # updates cursor position to be the curr pos plus the next control 
         if self.readData is not True:
             self.rect.x = self.rect.x + self.movex
@@ -205,15 +273,25 @@ class Player(pygame.sprite.Sprite):
         dataStore = np.zeros((noTimeStamps,noVars)) #
         self.allBodyPartsDatastore = np.zeros((noTimeStamps,noBodyParts,noVars))
         self.allBodyPartsDataStoreIteration = 0
-        self.datastore = dataStore
+        self.datastore = dataStore # datastore for hand motion only
+        # create a datastore for cursor motion
+        self.cursorDatastore = np.zeros((noTimeStamps,3)) # 1 for timestamp
+        self.cursorDatastoreIndex = 0
         self.targetAppearTimes = np.zeros(100)
         self.targetIndex = 0
+        self.writeData = True
         
     
     def checkIfCursorInBox(self):
         """
         checks if cursor inside box, and if so send signal
         """
+        # first write cursor loc to datastore
+        if self.writeData:
+            self.cursorDatastore[self.cursorDatastoreIndex,0] = pygame.time.get_ticks()
+            self.cursorDatastore[self.cursorDatastoreIndex,1:3] = [self.rect.x,self.rect.y]
+            self.cursorDatastoreIndex += 1
+        # check if target has spawned
         if pygame.time.get_ticks() > self.targetStartTime: # if target has spawned
             # check if the cursor is in the target area
             if self.targetBoxXmin <= self.rect.x <= self.targetBoxXmax and self.targetBoxYmin <= self.rect.y <= self.targetBoxYmax:

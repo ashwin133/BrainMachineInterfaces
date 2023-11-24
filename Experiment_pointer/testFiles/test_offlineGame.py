@@ -46,10 +46,10 @@ def testGameCanReadSimulatedData():
     gameEngine.readData = True
     gameEngine.readLocation = 'PointerExperimentData/22_11_ashTrial1.npz'
     gameEngine.timeProgram = 30 # in seconds
+    gameEngine.testMode = True
     # now run setup for the game
     player,targetBox,gameEngine, clock, player_list,debugger,player_list = runSetup(gameEngine=gameEngine)
     # set it up in test mode
-    debugger.test = True
     runner.runGame(gameEngine=gameEngine, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list)
 
 def testDebugModeWorksOffline():
@@ -61,7 +61,7 @@ def testDebugModeWorksOffline():
     gameEngine.readData = False
     gameEngine.timeProgram = 10 # in seconds
     # now run setup for the game
-    gameEngine.testMode = True
+    
     player,targetBox,gameEngine, clock, player_list,debugger,player_list = runSetup(gameEngine=gameEngine)
     # set it up in test mode
     outputVars = runner.runGame(gameEngine=gameEngine, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list)
@@ -75,4 +75,4 @@ def testOfflineDataCausesCorrectPointerMotion():
 
 
 # add these to online
-testDebugModeWorksOffline()
+#testGameCanReadSimulatedData()

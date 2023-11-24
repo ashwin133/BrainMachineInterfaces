@@ -42,14 +42,18 @@ def runSetup(gameEngine):
     gameEngine.world = pygame.display.set_mode([gameEngine.worldx,gameEngine.worldy]) # this is the surface
     gameEngine.targetStartTime = 100000
     targetBox = Box(gameEngine.leftCornerXBoxLoc,gameEngine.leftCornerYBoxLoc,gameEngine.boxWidth,gameEngine.boxHeight,gameEngine.colours['RED'],debugger)
-
+    
 
     player = Player(targetBox,gameEngine.colours, gameEngine.targetStartTime,gameEngine.worldx,gameEngine.worldy,debugger)   # spawn player
     player.rect.x = gameEngine.worldx // 2   # go to x
     player.rect.y = gameEngine.worldy // 2   # go to y
     # put shared memory in player
     if gameEngine.readData: # tell the cursor to read data
-        player.prepareForDataRead(gameEngine.readLocation,gameEngine.handDataReadVarName)
+        if gameEngine.readRigidBodies:
+            player.simulateSharedMemoryOn = True
+            if gameEngine.readAdjustedRigidBodies:
+                player.readAdjustedRigidBodies = True
+        player.prepareForDataRead(gameEngine.readLocation,gameEngine.handDataReadVarName,gameEngine.allBodyDataVarName)
         leftCornerXBoxLoc,leftCornerYBoxLoc = targetBox.prepareForDataRead(gameEngine.readLocation,gameEngine.targetBoxReadVarName,player)
         debugger.disp(3,'New Box seen in cursor object, x loc',player.targetBoxXmin)
         debugger.disp(3,'New Box seen in cursor object, y loc',player.targetBoxYmin)

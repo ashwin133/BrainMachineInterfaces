@@ -25,7 +25,8 @@ class gameStatistics():
                  targetBoxTimeAppearsVarName,targetBoxTimeHitsVarName,allBodyDataVarName,
                  boxSizeVarName,timeProgram,reachedBoxStatus,reachedBoxLatch,calibrated,
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
-                 leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode):
+                 leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
+                 readAdjustedRigidBodies):
         self.world = None
         self.calibrationTimeEnd = None
         self.targetStartTime = None
@@ -67,6 +68,9 @@ class gameStatistics():
         self.boxWidth = boxWidth
         self.boxHeight = boxHeight
         self.testMode = testMode
+        self.readRigidBodies = readRigidBodies
+        self.readAdjustedRigidBodies = readAdjustedRigidBodies
+
 
 
 class Debugger():
@@ -225,6 +229,8 @@ class Player(pygame.sprite.Sprite):
         self.rightHandDir = None
         self.readData = False
         self.writeData = False
+        self.simulateSharedMemoryOn = False
+        self.readAdjustedRigidBodies = False
 
         # set properties of the target box
         self.boxColor = targetBox.boxColor
@@ -301,9 +307,13 @@ class Player(pygame.sprite.Sprite):
         else:
             return 0
     
-    def prepareForDataRead(self,readDataLocation,readDataVarName):
+    def prepareForDataRead(self,readDataLocation,readDataVarName,allBodyDataVarName):
         data = np.load(readDataLocation)
+        bodyData = data[allBodyDataVarName]
         data = data[readDataVarName]
+        if self.simulateSharedMemoryOn:
+            self.bodyDataStore = bodyData
+            self.bodyDataStoreIteration = 0
         self.readDataStore = data
         self.readDataStoreIteration = 0
         self.readData = True
@@ -316,6 +326,12 @@ class Player(pygame.sprite.Sprite):
             self.sharedMemSize =  noDataTypes * noBodyParts
         else:
             self.debugger.disp(3,'Shared memory is not being used', '')
+            if self.simulateSharedMemoryOn:
+                self.sharedMemName = BODY_PART_MEM
+                self.sharedMemShape = (noBodyParts,noDataTypes)
+                self.sharedMemSize =  noDataTypes * noBodyParts
+                shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=True)
+                shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
     
     def processData(self):
         self.allBodyPartsDatastore = np.reshape(self.allBodyPartsDatastore,(self.noTimeStamps,-1))
@@ -324,7 +340,7 @@ class Player(pygame.sprite.Sprite):
         if self.readData is not True:
             shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
             shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
-            rightHandData = np.array(shared_array[self.rightHandIndex])
+            rightHandData = np.array(shared_array[ self.rightHandIndex])
             if self.datastore is not None: # record data if requested
                 self.datastore[self.datastoreIteration,:] = rightHandData[:6]
                 self.datastoreIteration += 1
@@ -337,10 +353,24 @@ class Player(pygame.sprite.Sprite):
             # read from datastore and increment index
             rightHandData = self.readDataStore[self.readDataStoreIteration] 
             self.readDataStoreIteration += 1
+            
+
 
         # both workflows have this adjustment
         self.rightHandPos = np.matmul(self.calibrationMatrix,rightHandData[0:3])
         self.rightHandDir = np.matmul(self.calibrationMatrix,rightHandData[3:6])
+        
+        if self.readData is True and self.simulateSharedMemoryOn:
+            shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
+            shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
+            if self.readAdjustedRigidBodies:
+                Q = np.zeros((6,6))
+                Q[0:3,0:3] = self.calibrationMatrix
+                Q[3:6,3:6] = self.calibrationMatrix 
+                shared_array[:,:6] = np.matmul(Q,self.bodyDataStore[self.bodyDataStoreIteration].reshape(51,6).transpose() ).transpose()
+            else:
+                shared_array[:,:6] = self.bodyDataStore[self.bodyDataStoreIteration].reshape(51,6) 
+            self.bodyDataStoreIteration += 1
 
         if self.calibrated is not True:
             # as game x is typically the body y plane (right) and game y is the body z plane (up) 
@@ -364,7 +394,7 @@ class Player(pygame.sprite.Sprite):
 
 
     def calcCursorPosFromHandData(self):
-        print(self.xRange,self.yRange)
+        #print(self.xRange,self.yRange)
         normalised_x_val = 1 -  (self.rightHandPos[1] - self.userMinXValue) / self.xRange
         normalised_y_Val = 1 - (self.rightHandPos[2] - self.userMinYValue) / self.yRange
         #print(normalised_x_val)

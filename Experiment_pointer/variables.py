@@ -49,8 +49,10 @@ timeToReach = None
 
 # DECIDE WHETHER TO READ ONLINE DATA AND WHETHER TO READ OR RECORD DATA
 FETCHDATAFROMREALTIME = True
-recordData = True
-readData = False
+recordData = False
+readData = True
+readRigidBodies = True # turn off if not read data
+readAdjustedRigidBodies = True # turn off if not read data
 readLocation = 'PointerExperimentData/23_11_ashTrial7_45offplane_120s.npz'
 writeDataLocation = 'PointerExperimentData/23_11_ashTrial7_45offplane_120s.npz'
 metadataLocation = 'metadata'
@@ -62,7 +64,7 @@ handDataReadVarName = 'dataStore'
 targetBoxReadVarName = 'targetBoxLocs'
 targetBoxTimeAppearsVarName = 'targetBoxAppearTimes'
 targetBoxTimeHitsVarName = 'targetBoxHitTimes'
-allBodyDataVarName = 'BodyData'
+allBodyDataVarName = 'allBodyPartsData'
 boxSizeVarName = 'boxSize'
 cursorMotionDatastoreLocation = 'CursorMotion' 
 gameEngineLocation = 'GameEngine'
@@ -95,6 +97,7 @@ gameEngine = gameStatistics(worldx,worldy,LATENCY_TEST,fps,ani,colours,main,time
                  targetBoxTimeAppearsVarName,targetBoxTimeHitsVarName,allBodyDataVarName,
                  boxSizeVarName,timeProgram,reachedBoxStatus,reachedBoxLatch,calibrated,
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
-                 leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode)
+                 leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
+                 readAdjustedRigidBodies)
 
 

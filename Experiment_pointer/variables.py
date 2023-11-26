@@ -52,9 +52,9 @@ FETCHDATAFROMREALTIME = True
 recordData = False
 readData = True
 readRigidBodies = True # turn off if not read data
-readAdjustedRigidBodies = True # turn off if not read data
-readLocation = 'PointerExperimentData/23_11_ashTrial7_45offplane_120s.npz'
-writeDataLocation = 'PointerExperimentData/23_11_ashTrial7_45offplane_120s.npz'
+readAdjustedRigidBodies = True # turn off if not read data 
+readLocation = 'PointerExperimentData/23_11_ashTrial1_90s.npz'
+writeDataLocation = 'PointerExperimentData/23_11_ashTrial1_290s.npz'
 metadataLocation = 'metadata'
 metadata = {'MetaData:' 'Pres '
 

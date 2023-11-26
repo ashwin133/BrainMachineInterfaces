@@ -424,6 +424,12 @@ class Player(pygame.sprite.Sprite):
                 shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
                 shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
                 rightHandData = np.array(shared_array[27,:]) # idx of right hand
+
+                self.datastore[self.datastoreIteration,:] = rightHandData[:6]
+                self.datastoreIteration += 1
+                # now write all body part info to database
+                self.allBodyPartsDatastore[self.allBodyPartsDataStoreIteration,:,:] =  np.array(shared_array[:,0:6])
+                self.allBodyPartsDataStoreIteration += 1
             else:
                 # read data from datastore and increment index
                 rightHandData = self.readDataStore[self.readDataStoreIteration] 

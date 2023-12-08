@@ -20,10 +20,10 @@ from Experiment_pointer.objects import *
 from Experiment_pointer.setup import runSetup, endProgram
 
 # run setup
-player,targetBox,gameEngine, clock, player_list,debugger,player_list = runSetup(gameEngine=gameEngine)
+player,targetBox,gameEngine, clock, player_list,debugger,player_list,cursorPredictor = runSetup(gameEngine=gameEngine)
 
 
-def runGame(gameEngine,player,debugger,targetBox,player_list):
+def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = None):
     
     while gameEngine.main:
         timestart = time.perf_counter()
@@ -33,11 +33,14 @@ def runGame(gameEngine,player,debugger,targetBox,player_list):
                 player.fetchSharedMemoryData()
                 if pygame.time.get_ticks() > gameEngine.calibrationTimeEnd:
                     if gameEngine.calibrated is False:
+                        
                         gameEngine.targetStartTime = player.finishCalibrationStage()
 
                         gameEngine.calibrated = True
                     else:
                         gameEngine.reachedBoxStatus = player.calcCursorPosFromHandData()
+                        if gameEngine.showCursorPredictor is True:
+                            cursorPredictor.calcCursorPosFromHandData()
                         debugger.disp(4,'X',player.rightHandPos[1])
                         debugger.disp(4,'Y',player.rightHandPos[2])
 
@@ -141,4 +144,4 @@ def runGame(gameEngine,player,debugger,targetBox,player_list):
 #runGame(gameEngine,player,debugger,targetBox)
 
 if __name__ == "__main__":
-    runGame(gameEngine,player,debugger,targetBox,player_list)
+    runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor=cursorPredictor)

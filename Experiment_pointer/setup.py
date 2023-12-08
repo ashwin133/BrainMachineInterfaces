@@ -53,6 +53,20 @@ def runSetup(gameEngine):
             player.simulateSharedMemoryOn = True
             if gameEngine.readAdjustedRigidBodies:
                 player.readAdjustedRigidBodies = True
+        if gameEngine.showCursorPredictor:
+            try:
+                np.load(gameEngine.cursorMotionDatastoreLocation)
+            except FileNotFoundError:
+                try:
+                    gameEngine.cursorMotionDatastoreLocation_ = '../' + gameEngine.cursorMotionDatastoreLocation
+                    np.load(gameEngine.cursorMotionDatastoreLocation)
+                    gameEngine.cursorMotionDatastoreLocation = gameEngine.cursorMotionDatastoreLocation_
+                except FileNotFoundError:
+                    gameEngine.cursorMotionDatastoreLocation = 'Experiment_pointer/' + gameEngine.cursorMotionDatastoreLocation
+                    np.load(gameEngine.cursorMotionDatastoreLocation)
+            dataLocation = np.load(gameEngine.cursorMotionDatastoreLocation)['cursorPred']
+            cursorPredictor = Player(targetBox,gameEngine.colours,100000,gameEngine.worldx,gameEngine.worldy,debugger,gameEngine.showCursorPredictor,dataLocation) # never generate box
+                    
         player.prepareForDataRead(gameEngine.readLocation,gameEngine.handDataReadVarName,gameEngine.allBodyDataVarName)
         leftCornerXBoxLoc,leftCornerYBoxLoc = targetBox.prepareForDataRead(gameEngine.readLocation,gameEngine.targetBoxReadVarName,player)
         debugger.disp(3,'New Box seen in cursor object, x loc',player.targetBoxXmin)
@@ -75,6 +89,7 @@ def runSetup(gameEngine):
 
     player_list = pygame.sprite.Group()
     player_list.add(player)
+    
 
     
 
@@ -96,7 +111,11 @@ def runSetup(gameEngine):
     if gameEngine.LATENCY_TEST:
         player.latencyTestActivated = True
         targetBox.latencyTestActivated = True
-    return player,targetBox,gameEngine, clock, player_list,debugger, player_list
+    if gameEngine.showCursorPredictor:
+        player_list.add(cursorPredictor)
+        return player,targetBox,gameEngine, clock, player_list,debugger, player_list, cursorPredictor
+    else:
+        return player,targetBox,gameEngine, clock, player_list,debugger, player_list, None
 
 def endProgram(gameEngine,player,targetBox,debugger):
         gameEngine.boxHitTimes = np.array(gameEngine.boxHitTimes)

@@ -53,12 +53,13 @@ recordData = False
 readData = True
 readRigidBodies = True # turn off if not read data
 readAdjustedRigidBodies = True # turn off if not read data 
+showCursorPredictor = True #turn off if not read data 
 readLocation = 'PointerExperimentData/23_11_ashTrial1_90s.npz'
 writeDataLocation = 'PointerExperimentData/23_11_ashTrial1_290s.npz'
 metadataLocation = 'metadata'
 metadata = {'MetaData:' 'Pres '
-
 }
+runDecoderInLoop = False
 
 handDataReadVarName = 'dataStore'
 targetBoxReadVarName = 'targetBoxLocs'
@@ -66,7 +67,7 @@ targetBoxTimeAppearsVarName = 'targetBoxAppearTimes'
 targetBoxTimeHitsVarName = 'targetBoxHitTimes'
 allBodyDataVarName = 'allBodyPartsData'
 boxSizeVarName = 'boxSize'
-cursorMotionDatastoreLocation = 'CursorMotion' 
+cursorMotionDatastoreLocation = 'PointerExperimentData/23_11_ashTrial1_90s_linearPredCursorPos.npz' 
 gameEngineLocation = 'GameEngine'
 #time to run program
 timeProgram = 120 # in seconds
@@ -98,6 +99,6 @@ gameEngine = gameStatistics(worldx,worldy,LATENCY_TEST,fps,ani,colours,main,time
                  boxSizeVarName,timeProgram,reachedBoxStatus,reachedBoxLatch,calibrated,
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
                  leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
-                 readAdjustedRigidBodies)
+                 readAdjustedRigidBodies,showCursorPredictor,cursorMotionDatastoreLocation,runDecoderInLoop)
 
 

@@ -1,0 +1,15 @@
+Use dashed lines for the predicted cursor movements
+use shapes of same colour for each trajectory to indicate start and end
+test model on other test datasets to form a probabilistic estimate of accuracy (error bars)
+credit assignment problem - worth researching 
+double check if you can perform the preprocessing of data in the closed loop
+closed loop - essentially store the coefficients of the linear model in real time
+# idea for an experiment - have two groups and give them different scenarios and tell them to different things 
+normalise DOF by standard deviation as opposed to range
+decode from derivatives of rigid body vectors
+eliminate noise before differentiating - can use kalman filters or exponentially weighted moving average
+use inkscape to make schematics
+affinity designer is paid but is very good
+photopea - can use it to improve design of plots after generating them in python
+How is the experiment novel - how does the human behave when the closed loop control is being developed (initial stage)
+can also look to decoupled moment balancing behaviour by asking participant to control using a controller initially then using closed loop control

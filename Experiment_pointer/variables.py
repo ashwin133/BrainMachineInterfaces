@@ -61,6 +61,8 @@ metadata = {'MetaData:' 'Pres '
 }
 runDecoderInLoop = False
 
+
+
 handDataReadVarName = 'dataStore'
 targetBoxReadVarName = 'targetBoxLocs'
 targetBoxTimeAppearsVarName = 'targetBoxAppearTimes'

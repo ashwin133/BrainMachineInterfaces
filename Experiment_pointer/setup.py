@@ -16,7 +16,11 @@ import numpy as np
 
 def runSetup(gameEngine):
     # test that location is readable
+    # change this function after it works
+    
+                    
 
+     
     if gameEngine.readData:
         try:
             np.load(gameEngine.readLocation)
@@ -111,8 +115,30 @@ def runSetup(gameEngine):
     if gameEngine.LATENCY_TEST:
         player.latencyTestActivated = True
         targetBox.latencyTestActivated = True
+    
+    if gameEngine.runDecoderInLoop:
+        gameEngine.decoderStartTime = 15000
+        gameEngine.decodeFromPreviousData = False # 
+        gameEngine.modelDecoderType = 'A'
+        if gameEngine.decodeFromPreviousData is False:
+            gameEngine.modelReadLocation = 'PointerExperimentData/linearRigidBodyDModel.npz'
+            try:
+                np.load(gameEngine.modelReadLocation)
+            except FileNotFoundError:
+                try:
+                    gameEngine.modelReadLocation_ = '../' + gameEngine.modelReadLocation
+                    np.load(gameEngine.modelReadLocation_)
+                    gameEngine.modelReadLocation = gameEngine.modelReadLocation_
+                except FileNotFoundError:
+                    gameEngine.modelReadLocation = 'Experiment_pointer/' + gameEngine.modelReadLocation
+                    np.load(gameEngine.modelReadLocation)
+            player.setupLiveDecoding(gameEngine)
+    
+    print('111')
+
     if gameEngine.showCursorPredictor:
         player_list.add(cursorPredictor)
+        print('222')
         return player,targetBox,gameEngine, clock, player_list,debugger, player_list, cursorPredictor
     else:
         return player,targetBox,gameEngine, clock, player_list,debugger, player_list, None

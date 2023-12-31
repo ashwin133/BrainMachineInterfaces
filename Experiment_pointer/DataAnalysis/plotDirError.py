@@ -81,7 +81,7 @@ def feedTargetMotionCursorPos(trueTrialCursorPos,estTrialCursorPos,goCueIdxes,ta
             thetaTrueDeg = np.rad2deg(thetaTrue)
             thetaEstDeg = np.rad2deg(thetaEst)
             thetaDiffDeg = np.rad2deg(thetaDiff)
-            if True:
+            if False:
                 plt.plot(cursorPosTargetMotionTrue[:,0],cursorPosTargetMotionTrue[:,1],marker = 'o')
                 plt.plot(cursorPosTargetMotionEst[:,0],cursorPosTargetMotionEst[:,1],marker = 'o')
                 plt.scatter(cursorPosTargetMotionTrue[0,0],cursorPosTargetMotionTrue[0,1],s=200, marker="D", color = 'g', label = 'True cursor trajectory start')
@@ -95,6 +95,17 @@ def feedTargetMotionCursorPos(trueTrialCursorPos,estTrialCursorPos,goCueIdxes,ta
 
 
 def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
+    """
+    RETURNS:
+    @param rigidBodyData: all rigid body movements across whole trial
+    @param cursorMotion_noTimestamp: cursor motion across whole trial in form x,y
+    @param cursorVelocities: cursor velocities across whole trial
+    @param goCuesIdx: indexes into trial data corresponding to when target displayed on screen
+    @param targetAquiredIdxes: index into trial data corresponding to when target reached
+    @param timeStamps: timestamps for each index in trial data
+    @param minDOF: minimum values for each DOF before scaling
+    @param maxDOF: maximum values for each DOF before scaling
+    """
     try:
         data = np.load('../PointerExperimentData/' + dataLocation) # for siddhi trial 3 the boxes were 60 x 60
         calMatrix = np.load('../PointerExperimentData/' + calLocation)
@@ -139,10 +150,15 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
     rigidBodyData  = rigidBodyData.reshape(-1,51,6)
     rigidBodyData = rigidBodyData[:,simpleBodyParts,:].reshape(-1,114)
     noDOF = 114
+    maxDOF = np.zeros(114)
+    minDOF = np.zeros(114)
+
     if True:
         for DOF in range(0,noDOF):
             DOFMin = min(rigidBodyData[:,DOF])
+            minDOF[DOF] = DOFMin
             DOFMax = max(rigidBodyData[:,DOF])
+            maxDOF[DOF] = DOFMax
             rigidBodyData[:,DOF] =  (rigidBodyData[:,DOF] - DOFMin) / (DOFMax - DOFMin + DOFOffset) # very sensitive to the offset ???
 
         cursorDOF = 2
@@ -166,17 +182,19 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
     # #plotCursorMotion(cursorMotion)
 
     
-    return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,goCueIdxes,targetAquiredIdxes, timeStamps
+    return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,goCueIdxes,targetAquiredIdxes, timeStamps,minDOF,maxDOF
 
 def findAverageAngularError(mode,tester,compPca,colorMap = None,plot = False,DOFOffset = 0.03,ignoreTargetMotionTimesLessThan = 600):
-    rigidBodies1, cursorPos1,cursorVel1,goCues1,targetHits1,timeStamps1 = processTrialData('23_11_ashTrial1_90s.npz', '23_11_trial1_cal_matrix.npz',DOFOffset)# make this test as it is shorter
-    rigidBodies2, cursorPos2,cursorVel2,goCues2,targetHits2,timeStamps2 = processTrialData('23_11_ashTrial2_120s.npz', '23_11_trial2_cal_matrix.npz',DOFOffset)
-    rigidBodies3, cursorPos3,cursorVel3,goCues3,targetHits3,timeStamps3 = processTrialData('23_11_ashTrial3_120s.npz', '23_11_trial3_cal_matrix.npz',DOFOffset)
-    rigidBodies4, cursorPos4,cursorVel4,goCues4,targetHits4,timeStamps4 = processTrialData('23_11_ashTrial4_120s.npz', '23_11_trial4_cal_matrix.npz',DOFOffset)
-    rigidBodies5, cursorPos5,cursorVel5,goCues5,targetHits,timeStamps5 = processTrialData('23_11_ashTrial5_120s.npz', '23_11_trial5_cal_matrix.npz',DOFOffset)
+    rigidBodies1, cursorPos1,cursorVel1,goCues1,targetHits1,timeStamps1, minDof1,maxDof1 = processTrialData('23_11_ashTrial1_90s.npz', '23_11_trial1_cal_matrix.npz',DOFOffset)# make this test as it is shorter
+    rigidBodies2, cursorPos2,cursorVel2,goCues2,targetHits2,timeStamps2, minDof2,maxDof2 = processTrialData('23_11_ashTrial2_120s.npz', '23_11_trial2_cal_matrix.npz',DOFOffset)
+    rigidBodies3, cursorPos3,cursorVel3,goCues3,targetHits3,timeStamps3, minDof3,maxDof3 = processTrialData('23_11_ashTrial3_120s.npz', '23_11_trial3_cal_matrix.npz',DOFOffset)
+    rigidBodies4, cursorPos4,cursorVel4,goCues4,targetHits4,timeStamps4, minDof4,maxDof4 = processTrialData('23_11_ashTrial4_120s.npz', '23_11_trial4_cal_matrix.npz',DOFOffset)
+    rigidBodies5, cursorPos5,cursorVel5,goCues5,targetHits,timeStamps5, minDof5,maxDof5 = processTrialData('23_11_ashTrial5_120s.npz', '23_11_trial5_cal_matrix.npz',DOFOffset)
 
     rigidBodyVectorTraining = np.concatenate((rigidBodies2,rigidBodies3,rigidBodies4,rigidBodies5), axis = 0)
     cursorPosTraining = np.concatenate((cursorPos2,cursorPos3,cursorPos4,cursorPos5),axis = 0)
+    maxDofTraining = np.max(np.concatenate((maxDof2,maxDof3,maxDof4,maxDof5)).reshape(-1,4),1)
+    minDofTraining = np.min(np.concatenate((minDof2,minDof3,minDof4,minDof5)).reshape(-1,4),1)
 
     rigidBodyVectorTest = rigidBodies1
     cursorPosTest = cursorPos1
@@ -285,8 +303,11 @@ def findAverageAngularError(mode,tester,compPca,colorMap = None,plot = False,DOF
     angularAccuracyMetric = 1 - np.abs(avgPercentError) / 1
     if tester == 'PCA_linear':
         label = type + ', l_PCA'  + str(compPca) + ', ' + str(DOFOffset) + ',<' + str(ignoreTargetMotionTimesLessThan) 
+        modelCoeff = reg.coef_
     elif tester == 'linear':
         label = type + ', l'  + ', ' + str(DOFOffset) + ',<' + str(ignoreTargetMotionTimesLessThan) 
+        modelCoeff = reg.coef_
+
     returnDict = {
         'True Angles': trueAngles,
         'Est Angles': estAngles,
@@ -295,7 +316,12 @@ def findAverageAngularError(mode,tester,compPca,colorMap = None,plot = False,DOF
         'Percent Errors': percentErrors,
         'Average Percentage Error': avgPercentError,
         'Angular Accuracy': angularAccuracyMetric,
-        'Label': label
+        'Label': label,
+        'Coeff': modelCoeff,
+        'MinDOF': minDofTraining,
+        'MaxDOF': maxDofTraining,
+        'DOFOffset': DOFOffset
+
     } 
     return returnDict
 
@@ -319,6 +345,8 @@ angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'lin
 compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=0)
 angAccs.append(angularInfoDict['Angular Accuracy'])
 angAccLabels.append(angularInfoDict['Label'])
+np.savez('linearRigidBodyAModel.npz', modelCoeff = angularInfoDict['Coeff'],minDOF = angularInfoDict['MinDOF'],
+         maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'])
 
 # A : PCA 20 Linear : 0.03 :no ignore
 angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
@@ -552,6 +580,9 @@ angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'lin
 compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
 angAccsD.append(angularInfoDict['Angular Accuracy'])
 angAccLabelsD.append(angularInfoDict['Label'])
+np.savez('linearRigidBodyDModel.npz', modelCoeff = angularInfoDict['Coeff'],minDOF = angularInfoDict['MinDOF'],
+         maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'])
+
 
 # D : Linear : 0.3 :ignore > 0
 angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \

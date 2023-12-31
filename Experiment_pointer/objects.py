@@ -72,6 +72,7 @@ class gameStatistics():
         self.readAdjustedRigidBodies = readAdjustedRigidBodies
         self.showCursorPredictor = showCursorPredictor
         self.cursorMotionDatastoreLocation = cursorMotionDatastoreLocation
+        self.runDecoderInLoop = runDecoderInLoop
 
 
 class Debugger():
@@ -257,7 +258,25 @@ class Player(pygame.sprite.Sprite):
         # pass all necessary colours
         self.colours = colours
 
+        # controls live decoding
+        self.liveDecoding = False
         
+    def setupLiveDecoding(self,gameEngine):
+        self.liveDecoding = True
+        self.decoderStartTime  = gameEngine.decoderStartTime
+        self.modelDecoderType = gameEngine.modelDecoderType
+        self.model = np.load(gameEngine.modelReadLocation)
+        self.modelCoeff = self.model['modelCoeff']
+        if self.modelDecoderType == 'A':
+            self.modelIgnoreIdx = 12 # make this more robust after
+            self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
+        if self.modelDecoderType == 'D':
+            self.modelIgnoreIdx = None # make this more robust after
+            self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
+        # TODO: need to also add ranges which should be tuples corresponding to min and max values to normalise model
+        self.DOFmin = self.model['minDOF']
+        self.DOFmax = self.model['maxDOF']
+        self.DOFOffset = self.model['DOFOffset']
 
     
     def control(self,x,y):
@@ -394,6 +413,40 @@ class Player(pygame.sprite.Sprite):
                 self.userMaxYValue = max(self.rightHandPos[2],self.userMaxYValue)
                 self.userMinXValue = min(self.rightHandPos[1],self.userMinXValue)
                 self.userMinYValue = min(self.rightHandPos[2],self.userMinYValue)
+            
+            if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
+                if not hasattr(self, 'fullCalibrationMatrix'):
+                    self.fullCalibrationMatrix = np.zeros((6,6))
+                    self.fullCalibrationMatrix[0:3,0:3] = self.calibrationMatrix
+                    self.fullCalibrationMatrix[3:6,3:6] = self.calibrationMatrix 
+                if False:
+                    tmpRigBodyArray = shared_array[self.correctBodyParts,:6]
+                    tmpRigBodyArray = np.matmul(self.fullCalibrationMatrix,tmpRigBodyArray.transpose()).transpose().reshape(-1,1)
+                    tmpRigBodyArray = np.array([(tmpRigBodyArray[i] - self.DOFmin[i]) / (self.DOFmax[i] - self.DOFmin[i] + self.DOFOffset) for i in range(0,len(self.DOFmin))])
+                    idxRightHand = self.modelIgnoreIdx * 6
+                    tmpArray = np.zeros(108)
+                    tmpArray[0:idxRightHand] = tmpRigBodyArray[0:idxRightHand,0]
+                    tmpArray[idxRightHand:] = tmpRigBodyArray[idxRightHand+6:,0]
+                    self.xposDECODE = np.matmul(self.modelCoeff[0],tmpArray.transpose())
+                    self.yposDECODE = np.matmul(self.modelCoeff[1],tmpArray.transpose())
+                
+                if True:
+                    tmpRigBodyArray = shared_array[self.correctBodyParts,:6] # idx 12
+                    tmpRigBodyArray = np.matmul(self.fullCalibrationMatrix,tmpRigBodyArray.transpose()).transpose().reshape(-1,1)
+                    tmpRigBodyArray = np.array([(tmpRigBodyArray[i] - self.DOFmin[i]) / (self.DOFmax[i] - self.DOFmin[i] + self.DOFOffset) for i in range(0,len(self.DOFmin))])
+                    idxRightHand = self.modelIgnoreIdx * 6
+                    tmpArray = tmpRigBodyArray[idxRightHand:idxRightHand+6] 
+                    self.yposDECODE = -np.matmul(self.modelCoeff[0],tmpArray)
+                    self.xposDECODE = -np.matmul(self.modelCoeff[1],tmpArray)
+                # ignore relevant indexes
+                
+                # control motion using model
+                # for now decoderStartTime should be higher than calibration time
+                #TODO: first multiply rigid body vector by calibration matrix
+                #TODO: resize each rigid body by ranges # self.ranges[i] = (min,max) for ith rigid body dim
+                #TODO: convert rigid bodies to cursor pos
+                #self.cursorPosLive = ...
+
 
     def finishCalibrationStage(self):
         print('Calibration stage is now over')
@@ -411,7 +464,14 @@ class Player(pygame.sprite.Sprite):
 
     def calcCursorPosFromHandData(self):
         #print(self.xRange,self.yRange)
-        if not self.cursorPredictor:
+        if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
+            self.rect.x = self.xposDECODE * self.worldX
+            self.rect.y = self.yposDECODE * self.worldY
+            self.debugger.disp(3,'X pos', self.rect.x,frequency = 50)
+            self.debugger.disp(3,'Y pos', self.rect.y,frequency = 50)
+            return self.checkIfCursorInBox()
+
+        elif not self.cursorPredictor:
             normalised_x_val = 1 -  (self.rightHandPos[1] - self.userMinXValue) / self.xRange
             normalised_y_Val = 1 - (self.rightHandPos[2] - self.userMinYValue) / self.yRange
             #print(normalised_x_val)

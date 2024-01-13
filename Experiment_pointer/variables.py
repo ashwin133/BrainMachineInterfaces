@@ -50,16 +50,21 @@ timeToReach = None
 # DECIDE WHETHER TO READ ONLINE DATA AND WHETHER TO READ OR RECORD DATA
 FETCHDATAFROMREALTIME = True
 recordData = False
-readData = True
+readData = False
 readRigidBodies = True # turn off if not read data
 readAdjustedRigidBodies = True # turn off if not read data 
-showCursorPredictor = True #turn off if not read data 
-readLocation = 'PointerExperimentData/23_11_ashTrial1_90s.npz'
-writeDataLocation = 'PointerExperimentData/23_11_ashTrial1_290s.npz'
+showCursorPredictor = False #turn off if not read data 
+readLocation = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB.npz'
+writeDataLocation = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB3.npz'
+writeDataLocationPkl = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB3.pkl'
 metadataLocation = 'metadata'
+invertXaxis = True  # necessary when facing opposite direction
 metadata = {'MetaData:' 'Pres '
 }
 runDecoderInLoop = False
+decoderType = "D"
+retrieveCursorDataFromModelFile = False
+modelReadLocation = 'PointerExperimentData/linearRigidBodyDModel.npz'
 
 
 
@@ -101,6 +106,7 @@ gameEngine = gameStatistics(worldx,worldy,LATENCY_TEST,fps,ani,colours,main,time
                  boxSizeVarName,timeProgram,reachedBoxStatus,reachedBoxLatch,calibrated,
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
                  leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
-                 readAdjustedRigidBodies,showCursorPredictor,cursorMotionDatastoreLocation,runDecoderInLoop)
+                 readAdjustedRigidBodies,showCursorPredictor,cursorMotionDatastoreLocation,runDecoderInLoop,
+                 retrieveCursorDataFromModelFile = retrieveCursorDataFromModelFile,modelReadLocation = modelReadLocation,decoderType = decoderType,writeDataLocationPkl = writeDataLocationPkl,invertXaxis=invertXaxis)
 
 

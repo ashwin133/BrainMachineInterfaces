@@ -48,6 +48,12 @@ def calcThetha(y_curr,y_prev,x_curr,x_prev):
         return 2 * np.pi -alpha
     elif dY <= 0 and dX <= 0:
         return  np.pi + alpha
+    
+def calcMag(y_curr,y_prev,x_curr,x_prev):
+    dY = y_curr - y_prev
+    dX = x_curr - x_prev
+    return np.sqrt(np.square(dY) + np.square(dX))
+
 
 def calcDirAvgForMovingToTarget(cursorPos,timeStamps):
     thethas = []
@@ -58,16 +64,34 @@ def calcDirAvgForMovingToTarget(cursorPos,timeStamps):
             pass
     return (sum(thethas))/(timeStamps[-1] - timeStamps[0])
 
+def calcMagAvgForMovingToTarget(cursorPos,timeStamps):
+    mags = []
+    for i in range(5,len(cursorPos[:,0]),5):
+        try:
+            mags.append((calcMag(cursorPos[i,1],cursorPos[i-5,1],cursorPos[i,0],cursorPos[i-5,0])) * (timeStamps[i]-timeStamps[i-5]))
+        except ZeroDivisionError:
+            pass
+    return (sum(mags))/(timeStamps[-1] - timeStamps[0])
+
 def reportThethaErrorForEachTargetMove(targetMotionCursorPosTrue,targetMotionCursorPosEst,targetMotionTimeStamps):
     thethaAvgTrue = calcDirAvgForMovingToTarget(targetMotionCursorPosTrue,targetMotionTimeStamps)
     thethaAvgEst = calcDirAvgForMovingToTarget(targetMotionCursorPosEst,targetMotionTimeStamps)
     return thethaAvgTrue, thethaAvgEst, thethaAvgTrue - thethaAvgEst
 
+def reportMagErrorForEachTargetMove(targetMotionCursorPosTrue,targetMotionCursorPosEst,targetMotionTimeStamps):
+    magAvgTrue = calcMagAvgForMovingToTarget(targetMotionCursorPosTrue,targetMotionTimeStamps)
+    magAvgEst = calcMagAvgForMovingToTarget(targetMotionCursorPosEst,targetMotionTimeStamps)
+    return magAvgTrue, magAvgEst, magAvgTrue - magAvgEst
 def feedTargetMotionCursorPos(trueTrialCursorPos,estTrialCursorPos,goCueIdxes,targetAquiredIdxes,timeStamps,ignoreTargetMotionTImesLessThan):
     trialDirDifferences = np.zeros(len(targetAquiredIdxes))
     anglesTrue = []
     anglesEst = []
     times = []
+
+    trialMagDifferences = np.zeros(len(targetAquiredIdxes))
+    magsTrue = []
+    magsEst = []
+    times_mags = []
     for i in range(len(targetAquiredIdxes)):
         cursorPosTargetMotionTrue = trueTrialCursorPos[goCueIdxes[i]: targetAquiredIdxes[i],:]
         cursorPosTargetMotionEst = estTrialCursorPos[goCueIdxes[i]: targetAquiredIdxes[i], :]
@@ -75,12 +99,18 @@ def feedTargetMotionCursorPos(trueTrialCursorPos,estTrialCursorPos,goCueIdxes,ta
         if targetMotionTimestamps[-1] - targetMotionTimestamps[0] > ignoreTargetMotionTImesLessThan:
             times.append(targetMotionTimestamps[-1] - targetMotionTimestamps[0])
             thetaTrue,thetaEst, thetaDiff = reportThethaErrorForEachTargetMove(cursorPosTargetMotionTrue,cursorPosTargetMotionEst,targetMotionTimestamps)
+            magTrue,magEst,magDiff = reportMagErrorForEachTargetMove(cursorPosTargetMotionTrue,cursorPosTargetMotionEst,targetMotionTimestamps)
             trialDirDifferences[i] = (thetaDiff)
             anglesTrue.append(thetaTrue)
             anglesEst.append(thetaEst)
             thetaTrueDeg = np.rad2deg(thetaTrue)
             thetaEstDeg = np.rad2deg(thetaEst)
             thetaDiffDeg = np.rad2deg(thetaDiff)
+
+            trialMagDifferences[i] = (magDiff)
+            magsTrue.append(magTrue)
+            magsEst.append(magEst)
+
             if False:
                 plt.plot(cursorPosTargetMotionTrue[:,0],cursorPosTargetMotionTrue[:,1],marker = 'o')
                 plt.plot(cursorPosTargetMotionEst[:,0],cursorPosTargetMotionEst[:,1],marker = 'o')
@@ -91,7 +121,7 @@ def feedTargetMotionCursorPos(trueTrialCursorPos,estTrialCursorPos,goCueIdxes,ta
                 plt.ylabel('Normalised Y cursor position', fontsize = 15)
                 plt.legend()
                 plt.show()
-    return anglesTrue,anglesEst,trialDirDifferences, times
+    return anglesTrue,anglesEst,trialDirDifferences, times, magsTrue,magsEst,trialMagDifferences
 
 
 def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
@@ -116,11 +146,14 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
     # data starts as soon as cursor moves on screen
     # recieve list of cursor movements
     cursorMotion = data['cursorMotionDatastoreLocation']    
+    cursorExp = cursorMotion[:,1:]
     # recieve list of transformed rigid body vectors that correspond to cursor movements
     calMatrix = calMatrix['calMatrix']
+    print(calMatrix)
     rigidBodyData_trial1 = data['allBodyPartsData'] # raw motion of all rigid bodies
     rigidBodyData_trial1 = rigidBodyData_trial1.reshape(-1,51,6)
     rigidBodyData_normalised = np.tensordot(calMatrix,rigidBodyData_trial1.transpose(), axes=([1],[0])).transpose().reshape(-1,306)
+    print(rigidBodyData_normalised)
 
     
 
@@ -164,7 +197,7 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
         cursorDOF = 2
         for cursorDim in range(0,cursorDOF):
             cursorDOFmin = min(cursorMotion_noTimestamp[:,cursorDim])
-            if False: # make min and max x,y cursor pos the actual range set in pygame
+            if True: # make min and max x,y cursor pos the actual range set in pygame
                 if cursorDim == 0:
                     cursorDOFmin = 0
                     cursorDOFMax = 1100
@@ -173,7 +206,7 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
                     cursorDOFmax = 800
             cursorDOFmax = max(cursorMotion_noTimestamp[:,cursorDim])
 
-            cursorMotion_noTimestamp[:,cursorDim] = (cursorMotion_noTimestamp[:,cursorDim] - cursorDOFmin) / (cursorDOFmax - cursorDOFmin+ 5)
+            cursorMotion_noTimestamp[:,cursorDim] = (cursorMotion_noTimestamp[:,cursorDim] - cursorDOFmin) / (cursorDOFmax - cursorDOFmin)
 
     # def plotCursorMotion(cursorMotion):
     #     ax = plt.figure()
@@ -182,14 +215,14 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03):
     # #plotCursorMotion(cursorMotion)
 
     
-    return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,goCueIdxes,targetAquiredIdxes, timeStamps,minDOF,maxDOF
+    return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,goCueIdxes,targetAquiredIdxes, timeStamps,minDOF,maxDOF,cursorExp
 
 def findAverageAngularError(mode,tester,compPca,colorMap = None,plot = False,DOFOffset = 0.03,ignoreTargetMotionTimesLessThan = 600):
-    rigidBodies1, cursorPos1,cursorVel1,goCues1,targetHits1,timeStamps1, minDof1,maxDof1 = processTrialData('23_11_ashTrial1_90s.npz', '23_11_trial1_cal_matrix.npz',DOFOffset)# make this test as it is shorter
-    rigidBodies2, cursorPos2,cursorVel2,goCues2,targetHits2,timeStamps2, minDof2,maxDof2 = processTrialData('23_11_ashTrial2_120s.npz', '23_11_trial2_cal_matrix.npz',DOFOffset)
-    rigidBodies3, cursorPos3,cursorVel3,goCues3,targetHits3,timeStamps3, minDof3,maxDof3 = processTrialData('23_11_ashTrial3_120s.npz', '23_11_trial3_cal_matrix.npz',DOFOffset)
-    rigidBodies4, cursorPos4,cursorVel4,goCues4,targetHits4,timeStamps4, minDof4,maxDof4 = processTrialData('23_11_ashTrial4_120s.npz', '23_11_trial4_cal_matrix.npz',DOFOffset)
-    rigidBodies5, cursorPos5,cursorVel5,goCues5,targetHits,timeStamps5, minDof5,maxDof5 = processTrialData('23_11_ashTrial5_120s.npz', '23_11_trial5_cal_matrix.npz',DOFOffset)
+    rigidBodies1, cursorPos1,cursorVel1,goCues1,targetHits1,timeStamps1, minDof1,maxDof1,c = processTrialData('23_11_ashTrial1_90s.npz', '23_11_trial1_cal_matrix.npz',DOFOffset)# make this test as it is shorter
+    rigidBodies2, cursorPos2,cursorVel2,goCues2,targetHits2,timeStamps2, minDof2,maxDof2,d = processTrialData('23_11_ashTrial2_120s.npz', '23_11_trial2_cal_matrix.npz',DOFOffset)
+    rigidBodies3, cursorPos3,cursorVel3,goCues3,targetHits3,timeStamps3, minDof3,maxDof3,e = processTrialData('23_11_ashTrial3_120s.npz', '23_11_trial3_cal_matrix.npz',DOFOffset)
+    rigidBodies4, cursorPos4,cursorVel4,goCues4,targetHits4,timeStamps4, minDof4,maxDof4,f = processTrialData('23_11_ashTrial4_120s.npz', '23_11_trial4_cal_matrix.npz',DOFOffset)
+    rigidBodies5, cursorPos5,cursorVel5,goCues5,targetHits,timeStamps5, minDof5,maxDof5,g = processTrialData('23_11_ashTrial5_120s.npz', '23_11_trial5_cal_matrix.npz',DOFOffset)
 
     rigidBodyVectorTraining = np.concatenate((rigidBodies2,rigidBodies3,rigidBodies4,rigidBodies5), axis = 0)
     cursorPosTraining = np.concatenate((cursorPos2,cursorPos3,cursorPos4,cursorPos5),axis = 0)
@@ -296,17 +329,22 @@ def findAverageAngularError(mode,tester,compPca,colorMap = None,plot = False,DOF
         scoreLabel = 'l' +  ', ' + str(DOFOffset)
 
     # now calculate average angular error on the test dataset
-    trueAngles,estAngles, angularErrors,times = feedTargetMotionCursorPos(Y_test_true,Y_pred,goCues1,targetHits1,timeStamps1,ignoreTargetMotionTimesLessThan)
+    trueAngles,estAngles, angularErrors,times,magsTrue,magsEst,trialMagDifferences = feedTargetMotionCursorPos(Y_test_true,Y_pred,goCues1,targetHits1,timeStamps1,ignoreTargetMotionTimesLessThan)
     percentErrors = 100 * [(estAngles[i] - trueAngles[i])/trueAngles[i] for i in range(0,len(trueAngles))]
     avgPercentError = np.average(percentErrors) 
+    percentErrorsMag = 100 * [(magsEst[i] - magsTrue[i])/magsTrue[i] for i in range(0,len(magsTrue))]
+    avgPercentErrorMag = np.average(percentErrorsMag) 
     print('error', avgPercentError)
     angularAccuracyMetric = 1 - np.abs(avgPercentError) / 1
+    magAccuracyMetric = 1 - np.abs(avgPercentErrorMag) /1
     if tester == 'PCA_linear':
         label = type + ', l_PCA'  + str(compPca) + ', ' + str(DOFOffset) + ',<' + str(ignoreTargetMotionTimesLessThan) 
         modelCoeff = reg.coef_
+        modelIntercept = reg.intercept_
     elif tester == 'linear':
         label = type + ', l'  + ', ' + str(DOFOffset) + ',<' + str(ignoreTargetMotionTimesLessThan) 
         modelCoeff = reg.coef_
+        modelIntercept = reg.intercept_
 
     returnDict = {
         'True Angles': trueAngles,
@@ -318,9 +356,19 @@ def findAverageAngularError(mode,tester,compPca,colorMap = None,plot = False,DOF
         'Angular Accuracy': angularAccuracyMetric,
         'Label': label,
         'Coeff': modelCoeff,
-        'MinDOF': minDofTraining,
-        'MaxDOF': maxDofTraining,
-        'DOFOffset': DOFOffset
+        'Intercept': modelIntercept,
+        'MinDOF': minDof1,
+        'MaxDOF': maxDof1,
+        'DOFOffset': DOFOffset,
+        'PredCursorPos': Y_pred,
+
+        'True Mags': magsTrue,
+        'Est Mags': magsEst,
+        'Mag Errors': trialMagDifferences,
+        'MagPercent Errors': percentErrorsMag,
+        'Average Percentage Error': avgPercentErrorMag,
+        'Mag Accuracy': magAccuracyMetric
+        
 
     } 
     return returnDict
@@ -345,8 +393,8 @@ angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'lin
 compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=0)
 angAccs.append(angularInfoDict['Angular Accuracy'])
 angAccLabels.append(angularInfoDict['Label'])
-np.savez('linearRigidBodyAModel.npz', modelCoeff = angularInfoDict['Coeff'],minDOF = angularInfoDict['MinDOF'],
-         maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'])
+np.savez('Experiment_pointer/PointerExperimentData/linearRigidBodyAModel.npz', modelCoeff = angularInfoDict['Coeff'],modelIntercept = angularInfoDict['Intercept'],minDOF = angularInfoDict['MinDOF'],
+         maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'], predCursorPos = angularInfoDict['PredCursorPos'])
 
 # A : PCA 20 Linear : 0.03 :no ignore
 angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
@@ -415,231 +463,330 @@ plt.title("Plot to show how different model configurations affect the angular ac
 plt.savefig('AngACCPlot_rigidBodiesA.png')
 plt.show()
 
-angAccsB = []
-angAccLabelsB = []
+# FOR MAGS
+angMags = []
+angMagLabels = []
 
-# B : PCA 20 Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
-compPca = 20, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
-
-# B : PCA 40 Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
-compPca = 40, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
-
-# B : PCA 60 Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
-compPca = 60, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
-
-# B : Linear : 0.01 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
+# A : Linear : 0.01: no ignore
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'linear', \
 compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.01,ignoreTargetMotionTimesLessThan=0)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
+angMags.append(angularInfoDict['Mag Accuracy'])
 
-# B : Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
+angMagLabels.append(angularInfoDict['Label'])
+
+# A : Linear : 0.03 :no ignore
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'linear', \
 compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
 
-# B : Linear : 0.06 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.05,ignoreTargetMotionTimesLessThan=0)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
+# A : Linear : 0.06 :no ignore
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'linear', \
+compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=0)
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
+# np.savez('Experiment_pointer/PointerExperimentData/linearRigidBodyAModel.npz', modelCoeff = angularInfoDict['Coeff'],modelIntercept = angularInfoDict['Intercept'],minDOF = angularInfoDict['MinDOF'],
+#          maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'], predCursorPos = angularInfoDict['PredCursorPos'])
 
-# B : PCA 20 Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# A : PCA 20 Linear : 0.03 :no ignore
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
+compPca = 20, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
+
+# A : PCA 40 Linear : 0.03 :no ignore
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
+compPca = 40, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
+
+# A : PCA 60 Linear : 0.03 :no ignore
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
+compPca = 60, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
+
+# A : Linear : 0.01: ignore > 600
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'linear', \
+compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.01,ignoreTargetMotionTimesLessThan=600)
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
+
+# A : Linear : 0.03 :ignore > 600
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'linear', \
+compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
+
+# A : Linear : 0.06 :ignore > 600
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'linear', \
+compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=600)
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
+
+# A : PCA 20 Linear : 0.03 :ignore > 600
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
 compPca = 20, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
 
-# B : PCA 40 Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# A : PCA 40 Linear : 0.03 :ignore > 600
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
 compPca = 40, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
 
-# B : PCA 60 Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# A : PCA 60 Linear : 0.03 :ignore > 600
+angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetA',tester = 'PCA_linear', \
 compPca = 60, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
+angMags.append(angularInfoDict['Mag Accuracy'])
+angMagLabels.append(angularInfoDict['Label'])
 
-# B : Linear : 0.01 :ignore > 600
+plt.figure(figsize=(14,8))
+plt.bar(angMagLabels,angMags,width = 0.5)
+plt.subplots_adjust(bottom=0.25)  # Adjust the bottom margin
+
+
+plt.ylabel('Mag Accuracy',fontsize = 15)
+plt.xlabel('Model Configurations',fontsize = 15)
+plt.xticks(fontsize=8) 
+plt.xticks(rotation = 55)
+plt.title("Plot to show how different model configurations affect the magnitude accuracy of the model's predictions \n - For using rigid body set A (All rigid bodies except right hand)",fontsize = 15)
+plt.savefig('AngACCPlot_rigidBodiesA.png')
+plt.show()
+
+
+# angAccsB = []
+# angAccLabelsB = []
+
+# # B : PCA 20 Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# compPca = 20, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : PCA 40 Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# compPca = 40, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : PCA 60 Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# compPca = 60, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : Linear : 0.01 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.01,ignoreTargetMotionTimesLessThan=0)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : Linear : 0.06 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.05,ignoreTargetMotionTimesLessThan=0)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : PCA 20 Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# compPca = 20, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : PCA 40 Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# compPca = 40, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : PCA 60 Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'PCA_linear', \
+# compPca = 60, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+
+# # B : Linear : 0.01 :ignore > 600
 angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
 compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.01,ignoreTargetMotionTimesLessThan=600)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
-
-# B : Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
-
-# B : Linear : 0.06 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.05,ignoreTargetMotionTimesLessThan=600)
-angAccsB.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsB.append(angularInfoDict['Label'])
-
-plt.figure(figsize=(14,8))
-plt.bar(angAccLabelsB,angAccsB,width = 0.5)
-plt.subplots_adjust(bottom=0.25)  # Adjust the bottom margin
-
-plt.ylabel('Angular Accuracy',fontsize = 15)
-plt.xlabel('Model Configurations',fontsize = 15)
-plt.xticks(fontsize=8) 
-plt.xticks(rotation = 55)
-plt.title("Plot to show how different model configurations affect the angular accuracy of the model's predictions \n - For using rigid body set B (All rigid bodies except ones on right arm)",fontsize = 15)
-plt.savefig('AngACCPlot_rigidBodiesB.png')
-plt.show()
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
+np.savez('Experiment_pointer/PointerExperimentData/linearRigidBodyBModel.npz', modelCoeff = angularInfoDict['Coeff'],modelIntercept = angularInfoDict['Intercept'],minDOF = angularInfoDict['MinDOF'],
+         maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'], predCursorPos = angularInfoDict['PredCursorPos'])
 
 
-angAccsC = []
-angAccLabelsC = []
+# # B : Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
 
-# C : Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
+# # B : Linear : 0.06 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetB',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.05,ignoreTargetMotionTimesLessThan=600)
+# angAccsB.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsB.append(angularInfoDict['Label'])
 
-# C : Linear : 0.05 :ignore > 0
+# plt.figure(figsize=(14,8))
+# plt.bar(angAccLabelsB,angAccsB,width = 0.5)
+# plt.subplots_adjust(bottom=0.25)  # Adjust the bottom margin
+
+# plt.ylabel('Angular Accuracy',fontsize = 15)
+# plt.xlabel('Model Configurations',fontsize = 15)
+# plt.xticks(fontsize=8) 
+# plt.xticks(rotation = 55)
+# plt.title("Plot to show how different model configurations affect the angular accuracy of the model's predictions \n - For using rigid body set B (All rigid bodies except ones on right arm)",fontsize = 15)
+# plt.savefig('AngACCPlot_rigidBodiesB.png')
+# plt.show()
+
+
+# angAccsC = []
+# angAccLabelsC = []
+
+# # C : Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
+
+# # C : Linear : 0.05 :ignore > 0
 angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
 compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.05,ignoreTargetMotionTimesLessThan=0)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
+np.savez('Experiment_pointer/PointerExperimentData/linearRigidBodyCModel.npz', modelCoeff = angularInfoDict['Coeff'],modelIntercept = angularInfoDict['Intercept'],minDOF = angularInfoDict['MinDOF'],
+         maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'], predCursorPos = angularInfoDict['PredCursorPos'])
 
-# C : Linear : 0.1 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
 
-# C : PCA 3 Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'PCA_linear', \
-compPca = 3, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
+# # C : Linear : 0.1 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
 
-# C : Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
+# # C : PCA 3 Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'PCA_linear', \
+# compPca = 3, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
 
-# C : Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.05,ignoreTargetMotionTimesLessThan=600)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
+# # C : Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
 
-# C : Linear : 0.1 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=600)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
+# # C : Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.05,ignoreTargetMotionTimesLessThan=600)
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
 
-# C : PCA 3 Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'PCA_linear', \
-compPca = 3, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsC.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsC.append(angularInfoDict['Label'])
+# # C : Linear : 0.1 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=600)
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
 
-plt.figure(figsize=(14,8))
-plt.bar(angAccLabelsC,angAccsC,width = 0.5)
-plt.subplots_adjust(bottom=0.25)  # Adjust the bottom margin
+# # C : PCA 3 Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetC',tester = 'PCA_linear', \
+# compPca = 3, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsC.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsC.append(angularInfoDict['Label'])
 
-plt.ylabel('Angular Accuracy',fontsize = 15)
-plt.xlabel('Model Configurations',fontsize = 15)
-plt.xticks(fontsize=8) 
-plt.xticks(rotation = 55)
-plt.title("Plot to show how different model configurations affect the angular accuracy of the model's predictions \n - For using rigid body set C (left hand only)",fontsize = 15)
-plt.savefig('AngACCPlot_rigidBodiesC.png')
-plt.show()
+# plt.figure(figsize=(14,8))
+# plt.bar(angAccLabelsC,angAccsC,width = 0.5)
+# plt.subplots_adjust(bottom=0.25)  # Adjust the bottom margin
+
+# plt.ylabel('Angular Accuracy',fontsize = 15)
+# plt.xlabel('Model Configurations',fontsize = 15)
+# plt.xticks(fontsize=8) 
+# plt.xticks(rotation = 55)
+# plt.title("Plot to show how different model configurations affect the angular accuracy of the model's predictions \n - For using rigid body set C (left hand only)",fontsize = 15)
+# plt.savefig('AngACCPlot_rigidBodiesC.png')
+# plt.show()
 
 angAccsD = []
 angAccLabelsD = []
 
-# D : Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : Linear : 0.1 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
-np.savez('linearRigidBodyDModel.npz', modelCoeff = angularInfoDict['Coeff'],minDOF = angularInfoDict['MinDOF'],
-         maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'])
+# # D : Linear : 0.1 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
+# np.savez('Experiment_pointer/PointerExperimentData/linearRigidBodyDModel.npz', modelCoeff = angularInfoDict['Coeff'],minDOF = angularInfoDict['MinDOF'],
+#          maxDOF = angularInfoDict['MaxDOF'], DOFOffset = angularInfoDict['DOFOffset'],modelIntercept = angularInfoDict['Intercept'],predCursorPos = angularInfoDict['PredCursorPos'])
 
 
-# D : Linear : 0.3 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.3,ignoreTargetMotionTimesLessThan=0)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : Linear : 0.3 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.3,ignoreTargetMotionTimesLessThan=0)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : PCA_Linear : 0.03 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
-compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : PCA_Linear : 0.03 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
+# compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=0)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : PCA_Linear : 0.06 :ignore > 0
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
-compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=0)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : PCA_Linear : 0.06 :ignore > 0
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
+# compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=0)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : Linear : 0.1 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=600)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : Linear : 0.1 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=600)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : Linear : 0.3 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
-compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.3,ignoreTargetMotionTimesLessThan=600)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : Linear : 0.3 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'linear', \
+# compPca = None, colorMap=colorMap,plot=False,DOFOffset= 0.3,ignoreTargetMotionTimesLessThan=600)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : PCA_Linear : 0.03 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
-compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : PCA_Linear : 0.03 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
+# compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.03,ignoreTargetMotionTimesLessThan=600)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-# D : PCA_Linear : 0.06 :ignore > 600
-angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
-compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=600)
-angAccsD.append(angularInfoDict['Angular Accuracy'])
-angAccLabelsD.append(angularInfoDict['Label'])
+# # D : PCA_Linear : 0.06 :ignore > 600
+# angularInfoDict = findAverageAngularError(mode = 'RigidBodiesSetD',tester = 'PCA_linear', \
+# compPca = 2, colorMap=colorMap,plot=False,DOFOffset= 0.06,ignoreTargetMotionTimesLessThan=600)
+# angAccsD.append(angularInfoDict['Angular Accuracy'])
+# angAccLabelsD.append(angularInfoDict['Label'])
 
-plt.figure(figsize=(14,8))
-plt.bar(angAccLabelsD,angAccsD,width = 0.5)
-plt.subplots_adjust(bottom=0.25)  # Adjust the bottom margin
+# plt.figure(figsize=(14,8))
+# plt.bar(angAccLabelsD,angAccsD,width = 0.5)
+# plt.subplots_adjust(bottom=0.25)  # Adjust the bottom margin
 
-plt.ylabel('Angular Accuracy',fontsize = 15)
-plt.xlabel('Model Configurations',fontsize = 15)
-plt.xticks(fontsize=8) 
-plt.xticks(rotation = 55)
-plt.title("Plot to show how different model configurations affect the angular accuracy of the model's predictions \n - For using rigid body set D (right hand only [control])",fontsize = 15)
-plt.savefig('AngACCPlot_rigidBodiesD.png')
-plt.show()
+# plt.ylabel('Angular Accuracy',fontsize = 15)
+# plt.xlabel('Model Configurations',fontsize = 15)
+# plt.xticks(fontsize=8) 
+# plt.xticks(rotation = 55)
+# plt.title("Plot to show how different model configurations affect the angular accuracy of the model's predictions \n - For using rigid body set D (right hand only [control])",fontsize = 15)
+# plt.savefig('AngACCPlot_rigidBodiesD.png')
+# plt.show()

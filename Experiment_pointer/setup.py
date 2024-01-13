@@ -12,6 +12,7 @@ import time
 import sys
 import pygame
 import numpy as np
+import pickle
 
 
 def runSetup(gameEngine):
@@ -58,6 +59,8 @@ def runSetup(gameEngine):
             if gameEngine.readAdjustedRigidBodies:
                 player.readAdjustedRigidBodies = True
         if gameEngine.showCursorPredictor:
+            if gameEngine.retrieveCursorDataFromModelFile == True:
+                gameEngine.cursorMotionDatastoreLocation = gameEngine.modelReadLocation
             try:
                 np.load(gameEngine.cursorMotionDatastoreLocation)
             except FileNotFoundError:
@@ -68,7 +71,11 @@ def runSetup(gameEngine):
                 except FileNotFoundError:
                     gameEngine.cursorMotionDatastoreLocation = 'Experiment_pointer/' + gameEngine.cursorMotionDatastoreLocation
                     np.load(gameEngine.cursorMotionDatastoreLocation)
-            dataLocation = np.load(gameEngine.cursorMotionDatastoreLocation)['cursorPred']
+            if gameEngine.retrieveCursorDataFromModelFile == True:
+                dataLocation = np.load(gameEngine.cursorMotionDatastoreLocation)['predCursorPos']
+            else:
+                dataLocation = np.load(gameEngine.cursorMotionDatastoreLocation)['cursorPred']
+            
             cursorPredictor = Player(targetBox,gameEngine.colours,100000,gameEngine.worldx,gameEngine.worldy,debugger,gameEngine.showCursorPredictor,dataLocation) # never generate box
                     
         player.prepareForDataRead(gameEngine.readLocation,gameEngine.handDataReadVarName,gameEngine.allBodyDataVarName)
@@ -117,11 +124,9 @@ def runSetup(gameEngine):
         targetBox.latencyTestActivated = True
     
     if gameEngine.runDecoderInLoop:
-        gameEngine.decoderStartTime = 15000
+        gameEngine.decoderStartTime = 10000
         gameEngine.decodeFromPreviousData = False # 
-        gameEngine.modelDecoderType = 'A'
         if gameEngine.decodeFromPreviousData is False:
-            gameEngine.modelReadLocation = 'PointerExperimentData/linearRigidBodyDModel.npz'
             try:
                 np.load(gameEngine.modelReadLocation)
             except FileNotFoundError:
@@ -139,9 +144,9 @@ def runSetup(gameEngine):
     if gameEngine.showCursorPredictor:
         player_list.add(cursorPredictor)
         print('222')
-        return player,targetBox,gameEngine, clock, player_list,debugger, player_list, cursorPredictor
+        return player,targetBox,gameEngine, clock, player_list,debugger, cursorPredictor
     else:
-        return player,targetBox,gameEngine, clock, player_list,debugger, player_list, None
+        return player,targetBox,gameEngine, clock, player_list,debugger, None
 
 def endProgram(gameEngine,player,targetBox,debugger):
         gameEngine.boxHitTimes = np.array(gameEngine.boxHitTimes)
@@ -151,12 +156,20 @@ def endProgram(gameEngine,player,targetBox,debugger):
             print('box hit times:', gameEngine.boxHitTimes)
             player.processData()
             del gameEngine.world
+            del player.images
+            del player.image
             np.savez(gameEngine.writeDataLocation,dataStore = player.datastore,targetBoxLocs = targetBox.writeDatastore,
                     targetBoxHitTimes = gameEngine.boxHitTimes,targetBoxAppearTimes = player.targetAppearTimes,
                     allBodyPartsData = player.allBodyPartsDatastore,boxSizeVarName = (gameEngine.boxHeight,gameEngine.boxWidth),
                     metadataLocation = gameEngine.metadataLocation,cursorMotionDatastoreLocation = player.cursorDatastore,gameEngineLocation = gameEngine)
-        
 
+            try:
+                with open(gameEngine.writeDataLocationPkl, 'wb') as file:
+                    pickle.dump([gameEngine,player], file)
+            except:
+                del player.model
+                with open(gameEngine.writeDataLocationPkl, 'wb') as file:
+                    pickle.dump([gameEngine,player], file)
         if debugger.test:
             outputDict = debugger.returnDebuggingOutput(player.datastore,targetBox.writeDatastore, gameEngine.boxHitTimes ,player.targetAppearTimes,player.allBodyPartsDatastore,
                                         (gameEngine.boxHeight,gameEngine.boxWidth),gameEngine.metadataLocation,player.cursorDatastore,gameEngine = gameEngine)
@@ -164,5 +177,7 @@ def endProgram(gameEngine,player,targetBox,debugger):
             gameEngine.main = False
             return outputDict
         else:
-            sys.exit()
+            pygame.quit()
+            gameEngine.main = False
+            return 
         

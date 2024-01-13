@@ -19,11 +19,9 @@ from Experiment_pointer.variables import gameEngine
 from Experiment_pointer.objects import *
 from Experiment_pointer.setup import runSetup, endProgram
 
-# run setup
-player,targetBox,gameEngine, clock, player_list,debugger,player_list,cursorPredictor = runSetup(gameEngine=gameEngine)
 
 
-def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = None):
+def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = None,clock = None):
     
     while gameEngine.main:
         timestart = time.perf_counter()
@@ -144,4 +142,8 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
 #runGame(gameEngine,player,debugger,targetBox)
 
 if __name__ == "__main__":
-    runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor=cursorPredictor)
+    # run setup
+    import pygame
+    player,targetBox,gameEngine, clock, player_list,debugger,cursorPredictor = runSetup(gameEngine=gameEngine)
+
+    runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor=cursorPredictor,clock = clock)

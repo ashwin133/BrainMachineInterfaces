@@ -3,14 +3,16 @@ Contains some helper functions to post process the raw data so models can be app
 
 """
 import numpy as np
+import matplotlib.pyplot as plt
 
-def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = False):
+def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = False,scalefeaturesAndOutputs = True,ignoreCalibration = False):
     """
     This function reads the raw trial data format that is generated after the pointer game is run. It processes 
     the data to extract useful information to fit models
     INPUT:
     @param dataLocation: location of raw trial data. Ensure file is inside PointerExperimentData, only supply the file name
     @param calLocation: location of file which has calibration matrix stored.  Ensure file is inside PointerExperimentData, only supply the file name
+    # supply none to fetch the calibration matrix from the game engine
     @param DOFOffset: This adds the specified offset to each DOF's range
     @param returnAsDict: return data in a dictionary or as variables
     RETURNS:
@@ -23,33 +25,58 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
     @param minDOF: minimum values for each DOF before scaling
     @param maxDOF: maximum values for each DOF before scaling
     """
+
     try:
-        data = np.load('../PointerExperimentData/' + dataLocation) # for siddhi trial 3 the boxes were 60 x 60
-        calMatrix = np.load('../PointerExperimentData/' + calLocation)
+        data = np.load('../PointerExperimentData/' + dataLocation,allow_pickle=True) # for siddhi trial 3 the boxes were 60 x 60
+        
     except FileNotFoundError:
-        data = np.load('Experiment_pointer/PointerExperimentData/' + dataLocation)
-        calMatrix = np.load('Experiment_pointer/PointerExperimentData/' + calLocation)
+        data = np.load('Experiment_pointer/PointerExperimentData/' + dataLocation,allow_pickle=True)
+    
+    if calLocation != None:
+        # Fetch the calibration matrix from a file
+        try:
+            calMatrix = np.load('../PointerExperimentData/' + calLocation)
+        except:
+            calMatrix = np.load('Experiment_pointer/PointerExperimentData/' + calLocation)
+
+        # recieve list of transformed rigid body vectors that correspond to cursor movements
+        calMatrix = calMatrix['calMatrix']
+
+    else:
+        # Fetch the calibration matrix from the game engine
+        if ignoreCalibration == False:
+            gameEngine = data['gameEngineLocation']
+            calMatrix = gameEngine.fullCalibrationMatrix
+        else:
+            pass
+
+
 
     # data starts as soon as cursor moves on screen
     # recieve list of cursor movements
     cursorMotion = data['cursorMotionDatastoreLocation']    
-    # recieve list of transformed rigid body vectors that correspond to cursor movements
-    calMatrix = calMatrix['calMatrix']
+    
+    # Calibrate rigid body data
     rigidBodyData_trial1 = data['allBodyPartsData'] # raw motion of all rigid bodies
     rigidBodyData_trial1 = rigidBodyData_trial1.reshape(-1,51,6)
-    rigidBodyData_normalised = np.tensordot(calMatrix,rigidBodyData_trial1.transpose(), axes=([1],[0])).transpose().reshape(-1,306)
-
+    if ignoreCalibration == False:
+        rigidBodyData_normalised = np.tensordot(calMatrix,rigidBodyData_trial1.transpose(), axes=([1],[0])).transpose().reshape(-1,306)
+    else:
+        rigidBodyData_normalised = rigidBodyData_trial1.reshape((-1,306))
     
 
-    # find when data stops being recorded for cursor data
+    # Find when data stops being recorded for cursor data
     lastrecordCursorIdx = np.where(cursorMotion[:,0] == 0)[0][0] - 1
     lastrecordRigidBodyIdx = np.where(rigidBodyData_normalised[:,0] == 0)[0][0] - 1
     startRigidBodyIdx = lastrecordRigidBodyIdx - lastrecordCursorIdx # as this is when calibration finishes and the cursor starts to move
 
+    # Start rigid body data after calibration
     rigidBodyData = rigidBodyData_normalised[startRigidBodyIdx:lastrecordRigidBodyIdx+1,:]
     
+    # Stop cursor motion data after last non zero value, as initially it is an array of size 0 larger than needed
     cursorMotion = cursorMotion[0:lastrecordCursorIdx+1]
     
+    # Calculate cursor velocities 
     cursorVelocities = np.gradient(cursorMotion[:,1:],cursorMotion[:,0],axis=0)
 
     # now get times of when target appeared to when target was hit
@@ -63,6 +90,8 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
 
     cursorMotion_noTimestamp = cursorMotion[:,1:] # remove timestamp column
     timeStamps = cursorMotion[:,0]
+
+    # Delete all redundant rigid bodies
     simpleBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49]
     rigidBodyData  = rigidBodyData.reshape(-1,51,6)
     rigidBodyData = rigidBodyData[:,simpleBodyParts,:].reshape(-1,114)
@@ -70,7 +99,9 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
     maxDOF = np.zeros(114)
     minDOF = np.zeros(114)
 
-    if True:
+    # Scale each rigid body and cursor if requested
+
+    if scalefeaturesAndOutputs:
         for DOF in range(0,noDOF):
             DOFMin = min(rigidBodyData[:,DOF])
             minDOF[DOF] = DOFMin
@@ -130,7 +161,7 @@ def readIndividualTargetMovements(processedDataDict):
         'cursorVelData': [],
         'timestamps': []
     }
-    for i in range(0,len(processedDataDict['goCues'])):
+    for i in range(0,len(processedDataDict['goCues'])-1):
         startTime = processedDataDict['timestamps'][processedDataDict['goCues'][i]]
         returnDict['rigidBodyData'].append(processedDataDict['rigidBodyData'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
         returnDict['cursorPosData'].append(processedDataDict['cursorPos'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
@@ -138,3 +169,80 @@ def readIndividualTargetMovements(processedDataDict):
         returnDict['timestamps'].append(processedDataDict['timestamps'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i]] - startTime)    
 
     return returnDict
+
+def plotVar(var1,list_ = False,npArray = False,plotFrom = 0,plotTo = -1,label = "",var1Label = "true"):
+    colorMap =  [
+    'red',         # Standard named color
+    '#FFA07A',     # Light Salmon (hexadecimal)
+    'blue',        # Standard named color
+    '#00FA9A',     # Medium Spring Green (hexadecimal)
+    'green',       # Standard named color
+    '#FFD700',     # Gold (hexadecimal)
+    'purple',      # Standard named color
+    '#87CEFA',     # Light Sky Blue (hexadecimal)
+    'orange',      # Standard named color
+    '#FF69B4',     # Hot Pink (hexadecimal)
+    'cyan',        # Standard named color
+    '#8A2BE2',     # Blue Violet (hexadecimal)
+    'magenta',     # Standard named color
+    '#20B2AA',     # Light Sea Green (hexadecimal)
+    'brown',       # Standard named color
+    '#D2691E',     # Chocolate (hexadecimal)
+    'pink',        # Standard named color
+    '#6495ED'      # Cornflower Blue (hexadecimal)
+]
+    if list_:
+        for idx,var in enumerate(var1):
+            if npArray == False:
+                var = np.asarray(var).transpose()
+            plt.plot(var[plotFrom:plotTo,0],var[plotFrom:plotTo,1],label = var1Label +label + str(idx),color = colorMap[idx%len(colorMap)])
+            plt.plot(var[plotFrom,0],var[plotFrom,1],marker = '.',markersize = 20,color = colorMap[idx%len(colorMap)])
+            plt.plot(var[plotTo,0],var[plotTo,1],marker = 'x',markersize = 10, color = colorMap[idx%len(colorMap)])
+    
+    else:
+
+        plt.plot(var1[plotFrom:plotTo,0],var1[plotFrom:plotTo,1],label = var1Label +label,color = colorMap[idx%len(colorMap)])
+        plt.plot(var1[plotFrom,0],var1[plotFrom,1],marker = '.',markersize = 20,color = colorMap[idx%len(colorMap)])
+        plt.plot(var1[plotTo,0],var1[plotTo,1],marker = 'x',markersize = 10, color = colorMap[idx%len(colorMap)])
+        plt.legend()
+
+    plt.show()
+
+def calcNormalisedAcquisitionTimes(processedDataDict,start = 0, end = -1,reactionTime = 300):
+    """
+    This function takes in data giving the start and location for each acquisition and 
+    """
+    cursorPosData = processedDataDict['cursorPosData'][start:end]
+    timestamps = processedDataDict['timestamps'][start:end]
+    acquisitionTimes = []
+
+
+    for idx,var in enumerate(cursorPosData):
+        var = var.transpose()
+        # Calculate the distance to each target from the starting point
+        startPos = (var[0,0],var[0,1])
+        endPos = (var[-1,0],var[-1,1])
+        distToTarget = np.sqrt(np.sum([ (endPos[i] - startPos[i]) ** 2 for i in range(len(startPos))]))
+        
+        # Calculate the time difference  
+        timeStart = timestamps[idx][0]
+        timeEnd = timestamps[idx][-1]
+
+
+
+
+        # the raw acquisition time before being normalised for distance and reaction time
+        rawAcquisitionTime = timeEnd - timeStart
+
+        acquisitionTime = (rawAcquisitionTime - reactionTime) / distToTarget
+
+        acquisitionTimes.append(acquisitionTime)
+
+        
+
+        
+    plt.plot(acquisitionTimes, label = "Normalised Acquisition Time")
+    plt.show()
+    return acquisitionTimes
+    
+

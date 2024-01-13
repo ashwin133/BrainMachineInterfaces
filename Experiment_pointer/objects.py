@@ -26,7 +26,8 @@ class gameStatistics():
                  boxSizeVarName,timeProgram,reachedBoxStatus,reachedBoxLatch,calibrated,
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
                  leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
-                 readAdjustedRigidBodies,showCursorPredictor, cursorMotionDatastoreLocation,runDecoderInLoop):
+                 readAdjustedRigidBodies,showCursorPredictor, cursorMotionDatastoreLocation,runDecoderInLoop,
+                 retrieveCursorDataFromModelFile,modelReadLocation,decoderType,writeDataLocationPkl,invertXaxis):
         self.world = None
         self.calibrationTimeEnd = None
         self.targetStartTime = None
@@ -46,6 +47,7 @@ class gameStatistics():
         self.readData = readData
         self.readLocation = readLocation
         self.writeDataLocation = writeDataLocation
+        self.writeDataLocationPkl = writeDataLocationPkl
         self.metadataLocation = metadataLocation
         self.metadata = metadata
         self.handDataReadVarName = handDataReadVarName
@@ -73,6 +75,11 @@ class gameStatistics():
         self.showCursorPredictor = showCursorPredictor
         self.cursorMotionDatastoreLocation = cursorMotionDatastoreLocation
         self.runDecoderInLoop = runDecoderInLoop
+        self.retrieveCursorDataFromModelFile = retrieveCursorDataFromModelFile
+        self.modelReadLocation = modelReadLocation
+        self.decoderType = decoderType
+        self.invertXaxis = invertXaxis
+        
 
 
 class Debugger():
@@ -264,14 +271,16 @@ class Player(pygame.sprite.Sprite):
     def setupLiveDecoding(self,gameEngine):
         self.liveDecoding = True
         self.decoderStartTime  = gameEngine.decoderStartTime
-        self.modelDecoderType = gameEngine.modelDecoderType
+        self.decoderType = gameEngine.decoderType
         self.model = np.load(gameEngine.modelReadLocation)
         self.modelCoeff = self.model['modelCoeff']
-        if self.modelDecoderType == 'A':
+        self.modelIntercept = self.model['modelIntercept']
+        self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
+        if self.decoderType == 'A': # A is remove right hand only
             self.modelIgnoreIdx = 12 # make this more robust after
             self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
-        if self.modelDecoderType == 'D':
-            self.modelIgnoreIdx = None # make this more robust after
+        if self.decoderType == 'B': # B is remove right side
+            self.modelIgnoreIdx = [9,10,11,12] # make this more robust after # these correspond to right side indexes
             self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
         # TODO: need to also add ranges which should be tuples corresponding to min and max values to normalise model
         self.DOFmin = self.model['minDOF']
@@ -419,18 +428,42 @@ class Player(pygame.sprite.Sprite):
                     self.fullCalibrationMatrix = np.zeros((6,6))
                     self.fullCalibrationMatrix[0:3,0:3] = self.calibrationMatrix
                     self.fullCalibrationMatrix[3:6,3:6] = self.calibrationMatrix 
-                if False:
+                    print(self.fullCalibrationMatrix)
+                if True:
                     tmpRigBodyArray = shared_array[self.correctBodyParts,:6]
                     tmpRigBodyArray = np.matmul(self.fullCalibrationMatrix,tmpRigBodyArray.transpose()).transpose().reshape(-1,1)
-                    tmpRigBodyArray = np.array([(tmpRigBodyArray[i] - self.DOFmin[i]) / (self.DOFmax[i] - self.DOFmin[i] + self.DOFOffset) for i in range(0,len(self.DOFmin))])
-                    idxRightHand = self.modelIgnoreIdx * 6
-                    tmpArray = np.zeros(108)
-                    tmpArray[0:idxRightHand] = tmpRigBodyArray[0:idxRightHand,0]
-                    tmpArray[idxRightHand:] = tmpRigBodyArray[idxRightHand+6:,0]
-                    self.xposDECODE = np.matmul(self.modelCoeff[0],tmpArray.transpose())
-                    self.yposDECODE = np.matmul(self.modelCoeff[1],tmpArray.transpose())
+                    #tmpRigBodyArray = np.array([(tmpRigBodyArray[i] - self.DOFmin[i]) / (self.DOFmax[i] - self.DOFmin[i] + self.DOFOffset) for i in range(0,len(self.DOFmin))])
+                    for DOF in range(0,tmpRigBodyArray.shape[0]):
+                        tmpRigBodyArray[DOF] =  (tmpRigBodyArray[DOF] - self.DOFmin[DOF]) / (self.DOFmax[DOF] - self.DOFmin[DOF] + self.DOFOffset) # very sensitive to the offset ???
+
+                    if self.decoderType == "A":
+                        idxRightHand = self.modelIgnoreIdx * 6
+                        tmpArray = np.zeros(108)
+                        tmpArray[0:idxRightHand] = tmpRigBodyArray[0:idxRightHand,0]
+                        tmpArray[idxRightHand:] = tmpRigBodyArray[idxRightHand+6:,0]
+
+                    elif self.decoderType == "B":
+                        startIndex = self.modelIgnoreIdx[0] * 6
+                        endIndex = self.modelIgnoreIdx[-1] * 6 + 6
+                        tmpArray = tmpRigBodyArray.copy()
+                        tmpArray =   np.delete(tmpArray,slice(startIndex,endIndex,1),0)
+                    
+                    elif self.decoderType == "C":
+                        idxLeftHand = 8 * 6
+                        tmpArray = tmpRigBodyArray[idxLeftHand:idxLeftHand+6]
+                    elif self.decoderType == "D":
+                        idxRightHand = 12 * 6
+                        tmpArray = tmpRigBodyArray[idxRightHand:idxRightHand+6]
+
+                    self.xposDECODE = np.matmul(self.modelCoeff[0].reshape(1,-1),tmpArray.reshape(1,-1).transpose()) + self.modelIntercept[0]
+                    self.yposDECODE = np.matmul(self.modelCoeff[1].reshape(1,-1),tmpArray.reshape(1,-1).transpose()) + self.modelIntercept[1]
+
+                    
+                        
+                        
+
                 
-                if True:
+                if False:
                     tmpRigBodyArray = shared_array[self.correctBodyParts,:6] # idx 12
                     tmpRigBodyArray = np.matmul(self.fullCalibrationMatrix,tmpRigBodyArray.transpose()).transpose().reshape(-1,1)
                     tmpRigBodyArray = np.array([(tmpRigBodyArray[i] - self.DOFmin[i]) / (self.DOFmax[i] - self.DOFmin[i] + self.DOFOffset) for i in range(0,len(self.DOFmin))])
@@ -438,6 +471,7 @@ class Player(pygame.sprite.Sprite):
                     tmpArray = tmpRigBodyArray[idxRightHand:idxRightHand+6] 
                     self.yposDECODE = -np.matmul(self.modelCoeff[0],tmpArray)
                     self.xposDECODE = -np.matmul(self.modelCoeff[1],tmpArray)
+                    #print('Pred',pygame.time.get_ticks(),self.xposDECODE,self.yposDECODE)
                 # ignore relevant indexes
                 
                 # control motion using model
@@ -465,10 +499,27 @@ class Player(pygame.sprite.Sprite):
     def calcCursorPosFromHandData(self):
         #print(self.xRange,self.yRange)
         if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
-            self.rect.x = self.xposDECODE * self.worldX
-            self.rect.y = self.yposDECODE * self.worldY
-            self.debugger.disp(3,'X pos', self.rect.x,frequency = 50)
-            self.debugger.disp(3,'Y pos', self.rect.y,frequency = 50)
+            # if pygame.time.get_ticks() < self.decoderStartTime + 5000:
+            #     self.XrangeFactor = 1
+            #     self.YrangeFactor = 1
+            #     self.maxX = -9000
+            #     self.minX = 10000
+            #     self.maxY = -10000
+            #     self.minY = 10000
+            # else:
+            #     self.XrangeFactor = (self.maxX - self.minX)/1100
+            #     self.YrangeFactor = (self.maxY - self.minY)/800
+
+            self.rect.x = self.xposDECODE * self.worldX #* 1/self.XrangeFactor
+            self.rect.y = self.yposDECODE * self.worldY #* 1/self.YrangeFactor
+            # if np.abs(self.rect.x) < 10000 and np.abs(self.rect.y) < 10000:
+            #     self.maxX = max(self.maxX,self.rect.x)
+            #     self.maxY = max(self.maxY,self.rect.y)
+            #     self.minX = min(self.minX,self.rect.x)
+            #     self.minY = min(self.minY,self.rect.y)
+            print('1',self.rect.x,self.rect.y)
+            self.debugger.disp(3,'X pos', self.xposDECODE,frequency = 50)
+            self.debugger.disp(3,'Y pos', self.yposDECODE,frequency = 50)
             return self.checkIfCursorInBox()
 
         elif not self.cursorPredictor:
@@ -478,10 +529,12 @@ class Player(pygame.sprite.Sprite):
             #print(normalised_y_Val)
             self.rect.x = normalised_x_val * self.worldX
             self.rect.y = normalised_y_Val * self.worldY
+            
             return self.checkIfCursorInBox()
         else:
-            self.rect.x  = self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,0] * self.worldX
+            self.rect.x  = self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,0] * self.worldX 
             self.rect.y  = self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,1] * self.worldY
+            #print('Actual',pygame.time.get_ticks(),self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,0],self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,1])
             self.cursorPredictorDatastoreIteration += 1
         
 
@@ -506,12 +559,12 @@ class Player(pygame.sprite.Sprite):
                 shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
                 shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
                 rightHandData = np.array(shared_array[27,:]) # idx of right hand
-
-                self.datastore[self.datastoreIteration,:] = rightHandData[:6]
-                self.datastoreIteration += 1
-                # now write all body part info to database
-                self.allBodyPartsDatastore[self.allBodyPartsDataStoreIteration,:,:] =  np.array(shared_array[:,0:6])
-                self.allBodyPartsDataStoreIteration += 1
+                if self.writeData:
+                    self.datastore[self.datastoreIteration,:] = rightHandData[:6]
+                    self.datastoreIteration += 1
+                    # now write all body part info to database
+                    self.allBodyPartsDatastore[self.allBodyPartsDataStoreIteration,:,:] =  np.array(shared_array[:,0:6])
+                    self.allBodyPartsDataStoreIteration += 1
             else:
                 # read data from datastore and increment index
                 rightHandData = self.readDataStore[self.readDataStoreIteration] 

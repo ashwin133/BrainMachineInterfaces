@@ -29,6 +29,6 @@ shared_Block,sharedArray = streamData.defineSharedMemory(sharedMemoryName= 'Test
 
 # this function fetches data from motive and dumps data in the shared memory
 streamData.fetchLiveData(sharedArray, shared_Block, simulate=False)
-    
+
 print("Program ended successfully")
 shared_Block.close()

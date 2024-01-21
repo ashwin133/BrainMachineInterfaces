@@ -4,6 +4,7 @@ Contains some helper functions to post process the raw data so models can be app
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = False,scalefeaturesAndOutputs = True,ignoreCalibration = False):
     """
@@ -27,9 +28,11 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
     """
 
     try:
+        print(os.getcwd())
         data = np.load('../PointerExperimentData/' + dataLocation,allow_pickle=True) # for siddhi trial 3 the boxes were 60 x 60
         
     except FileNotFoundError:
+        print(os.getcwd())
         data = np.load('Experiment_pointer/PointerExperimentData/' + dataLocation,allow_pickle=True)
     
     if calLocation != None:
@@ -170,7 +173,7 @@ def readIndividualTargetMovements(processedDataDict):
 
     return returnDict
 
-def plotVar(var1,list_ = False,npArray = False,plotFrom = 0,plotTo = -1,label = "",var1Label = "true"):
+def plotVar(var1,list_ = False,invertY = False,npArray = False,plotFrom = 0,plotTo = -1,label = "",var1Label = "true"):
     colorMap =  [
     'red',         # Standard named color
     '#FFA07A',     # Light Salmon (hexadecimal)
@@ -195,20 +198,77 @@ def plotVar(var1,list_ = False,npArray = False,plotFrom = 0,plotTo = -1,label = 
         for idx,var in enumerate(var1):
             if npArray == False:
                 var = np.asarray(var).transpose()
-            plt.plot(var[plotFrom:plotTo,0],var[plotFrom:plotTo,1],label = var1Label +label + str(idx),color = colorMap[idx%len(colorMap)])
-            plt.plot(var[plotFrom,0],var[plotFrom,1],marker = '.',markersize = 20,color = colorMap[idx%len(colorMap)])
-            plt.plot(var[plotTo,0],var[plotTo,1],marker = 'x',markersize = 10, color = colorMap[idx%len(colorMap)])
-    
+            if invertY:
+                var[plotFrom:plotTo,1] = 1 - var[plotFrom:plotTo,1]
+
+            if len(var) <= 70 and idx != 0:
+                continue
+
+            if idx == 0:
+                plt.plot(var[plotFrom:plotTo,0],var[plotFrom:plotTo,1],color = "k",label = "Trajectory")
+                plt.plot(var[plotFrom,0],var[plotFrom,1],marker = '.',markersize = 20,color = 'k',label = "Start")
+                plt.plot(var[plotTo-1,0],var[plotTo-1,1],marker = 's',markersize = 10, color = 'k', label = "End")
+            
+            else:
+                plt.plot(var[plotFrom:plotTo,0],var[plotFrom:plotTo,1],color = colorMap[idx%len(colorMap)])
+                plt.plot(var[plotFrom,0],var[plotFrom,1],marker = '.',markersize = 20,color = colorMap[idx%len(colorMap)])
+                plt.plot(var[plotTo-1,0],var[plotTo-1,1],marker = 's',markersize = 10, color = colorMap[idx%len(colorMap)])
+            
     else:
 
         plt.plot(var1[plotFrom:plotTo,0],var1[plotFrom:plotTo,1],label = var1Label +label,color = colorMap[idx%len(colorMap)])
         plt.plot(var1[plotFrom,0],var1[plotFrom,1],marker = '.',markersize = 20,color = colorMap[idx%len(colorMap)])
         plt.plot(var1[plotTo,0],var1[plotTo,1],marker = 'x',markersize = 10, color = colorMap[idx%len(colorMap)])
-        plt.legend()
-
-    plt.show()
+    plt.legend(loc = "upper right",bbox_to_anchor=(1, 1),fontsize = 15)
 
 def calcNormalisedAcquisitionTimes(processedDataDict,start = 0, end = -1,reactionTime = 300):
+    """
+    This function takes in data giving the start and location for each acquisition and 
+    """
+    cursorPosData = processedDataDict['cursorPosData'][start:end]
+    timestamps = processedDataDict['timestamps'][start:end]
+    IPs = []
+
+
+    for idx,var in enumerate(cursorPosData):
+        var = var.transpose()
+        # Calculate the distance to each target from the starting point
+        startPos = (var[0,0],var[0,1])
+        endPos = (var[-1,0],var[-1,1])
+        distToTarget = np.sqrt(np.sum([ (endPos[i] - startPos[i]) ** 2 for i in range(len(startPos))]))
+        
+        # Calculate distance unnormalised distance for fitts law
+        ranges = [1100,800]
+        D = np.sqrt(np.sum([ (ranges[i] * (endPos[i] - startPos[i])) ** 2 for i in range(len(startPos))]))
+        if D == 0:
+            continue
+        # Calculate the time difference  
+        timeStart = timestamps[idx][0]
+        timeEnd = timestamps[idx][-1]
+
+
+
+
+        # the raw acquisition time before being normalised for distance and reaction time
+        totalTime = timeEnd - timeStart
+        cursorWidth = 60
+        IP = calcHumanPerformance(totalTime,reactionTime,D,W=60)
+        IPs.append(IP)
+        
+
+        
+    plt.plot(IPs, label = "Index of Performances")
+    plt.show()
+    return IPs
+
+def calcHumanPerformance(totalTime,reactionTime,D,W):
+    """uses Fitts law to calculate human performance"""
+    MT = totalTime - reactionTime
+    ID = np.log2((2*D)/W)
+    IP = ID / MT
+    return IP
+
+def calcNormalisedAcquisitionTimes_old(processedDataDict,start = 0, end = -1,reactionTime = 300):
     """
     This function takes in data giving the start and location for each acquisition and 
     """
@@ -223,7 +283,10 @@ def calcNormalisedAcquisitionTimes(processedDataDict,start = 0, end = -1,reactio
         startPos = (var[0,0],var[0,1])
         endPos = (var[-1,0],var[-1,1])
         distToTarget = np.sqrt(np.sum([ (endPos[i] - startPos[i]) ** 2 for i in range(len(startPos))]))
-        
+        # Calculate distance unnormalised distance for fitts law
+        ranges = [1100,800]
+        distToTarget_unNormalised = np.sqrt(np.sum([ (ranges[i] * (endPos[i] - startPos[i])) ** 2 for i in range(len(startPos))]))
+        print(distToTarget_unNormalised)
         # Calculate the time difference  
         timeStart = timestamps[idx][0]
         timeEnd = timestamps[idx][-1]

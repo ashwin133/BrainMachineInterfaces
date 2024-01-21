@@ -12,6 +12,10 @@ rigidBodyParts = ['Pelvis', 'Ab', 'Chest', 'Neck', 'Head', 'LShoulder', 'LUArm',
                       'RRing1', 'RRing2', 'RRing3', 'RPinky1', 'RPinky2', 'RPinky3', 'LThigh', 'LShin', 
                       'LFoot', 'LToe', 'RThigh', 'RShin', 'RFoot', 'RToe']
 
+bodyParts = ['Pelvis', 'Ab', 'Chest', 'Neck', 'Head', 'LShoulder', 'LUArm', 
+                      'LFArm', 'LHand', 'RShoulder', 'RUArm', 'RFArm', 'RHand',  'LThigh', 'LShin', 
+                      'LFoot', 'RThigh', 'RShin', 'RFoot']
+
 
 # dict of body parts, where each vector represents [importance = 1 (if important), (unit quaternion), color to plot]
 

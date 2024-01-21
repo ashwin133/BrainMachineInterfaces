@@ -497,7 +497,7 @@ def processTrialData(dataLocation,DOFOffset = 0.03):
     
     return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,goCueIdxes,targetAquiredIdxes, timeStamps,minDOF,maxDOF,cursorExp
 
-def findAverageAngularError(mode,tester,compPca,savePath,colorMap = None,plot = False,DOFOffset = 0.03,ignoreTargetMotionTimesLessThan = 600):
+def fitModelToData(mode,tester,compPca,savePath,colorMap = None,plot = False,DOFOffset = 0.03,ignoreTargetMotionTimesLessThan = 600):
     rigidBodies1, cursorPos1,cursorVel1,goCues1,targetHits1,timeStamps1, minDof1,maxDof1,c = processTrialData(savePath + "_test",DOFOffset)# make this test 
     rigidBodies2, cursorPos2,cursorVel2,goCues2,targetHits2,timeStamps2, minDof2,maxDof2,d = processTrialData(savePath + "_training1",DOFOffset)
     rigidBodies3, cursorPos3,cursorVel3,goCues3,targetHits3,timeStamps3, minDof3,maxDof3,e = processTrialData(savePath + "_training2",DOFOffset)
@@ -610,10 +610,10 @@ def findAverageAngularError(mode,tester,compPca,savePath,colorMap = None,plot = 
 
     # now calculate average angular error on the test dataset
     trueAngles,estAngles, angularErrors,times,magsTrue,magsEst,trialMagDifferences = feedTargetMotionCursorPos(Y_test_true,Y_pred,goCues1,targetHits1,timeStamps1,ignoreTargetMotionTimesLessThan)
-    percentErrors = 100 * [(estAngles[i] - trueAngles[i])/trueAngles[i] for i in range(0,len(trueAngles))]
-    avgPercentError = np.average(percentErrors) 
-    percentErrorsMag = 100 * [(magsEst[i] - magsTrue[i])/magsTrue[i] for i in range(0,len(magsTrue))]
-    avgPercentErrorMag = np.average(percentErrorsMag) 
+    percentErrors = 100 * [(abs(estAngles[i] - trueAngles[i]))/trueAngles[i] for i in range(0,len(trueAngles))]
+    avgPercentError = np.average((percentErrors)) 
+    percentErrorsMag = 100 * [abs((magsEst[i] - magsTrue[i]))/magsTrue[i] for i in range(0,len(magsTrue))]
+    avgPercentErrorMag = np.average((percentErrorsMag)) 
     #print('error', avgPercentError)
     angularAccuracyMetric = 1 - np.abs(avgPercentError) / 1
     magAccuracyMetric = 1 - np.abs(avgPercentErrorMag) /1
@@ -641,14 +641,38 @@ def findAverageAngularError(mode,tester,compPca,savePath,colorMap = None,plot = 
         'MaxDOF': maxDof1,
         'DOFOffset': DOFOffset,
         'PredCursorPos': Y_pred,
-
+        'TestCursorPos': Y_test_true,
         'True Mags': magsTrue,
         'Est Mags': magsEst,
         'Mag Errors': trialMagDifferences,
         'MagPercent Errors': percentErrorsMag,
         'Average Percentage Error': avgPercentErrorMag,
-        'Mag Accuracy': magAccuracyMetric
+        'Mag Accuracy': magAccuracyMetric,
+        'Model': reg,
+        'Score': score,
+        "X_train": X_train,
+        "Y_train": Y_train,
         
 
     } 
+    return returnDict
+
+
+
+# BELOW FUNCTIONS FOR DATA ANALYSIS
+
+def readIndividualTargetMovements(processedDataDict):
+    returnDict = {
+        'rigidBodyData': [], 
+        'cursorPosData': [], 
+        'cursorVelData': [],
+        'timestamps': []
+    }
+    for i in range(0,len(processedDataDict['goCues'])-1):
+        startTime = processedDataDict['timestamps'][processedDataDict['goCues'][i]]
+        returnDict['rigidBodyData'].append(processedDataDict['rigidBodyData'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
+        returnDict['cursorPosData'].append(processedDataDict['cursorPos'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
+        returnDict['cursorVelData'].append(processedDataDict['cursorVel'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
+        returnDict['timestamps'].append(processedDataDict['timestamps'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i]] - startTime)    
+
     return returnDict

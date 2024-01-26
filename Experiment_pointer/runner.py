@@ -36,9 +36,9 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
 
                         gameEngine.calibrated = True
                     else:
-                        gameEngine.reachedBoxStatus = player.calcCursorPosFromHandData()
+                        gameEngine.reachedBoxStatus = player.calcCursorPosFromHandData(targetBox)
                         if gameEngine.showCursorPredictor is True:
-                            cursorPredictor.calcCursorPosFromHandData()
+                            cursorPredictor.calcCursorPosFromHandData(targetBox)
                         debugger.disp(4,'X',player.rightHandPos[1])
                         debugger.disp(4,'Y',player.rightHandPos[2])
 
@@ -86,7 +86,7 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
         if not gameEngine.FETCHDATAFROMREALTIME:
             #print('LOOP EXECUTED')
             # update based on requested movement and check if cursor has reached box
-            gameEngine.reachedBoxStatus = player.update()
+            gameEngine.reachedBoxStatus = player.update(targetBox)
 
         if gameEngine.FETCHDATAFROMREALTIME:
             pass # just confirming that check for cursor has already taken
@@ -118,7 +118,7 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
             # reset timeToReach to None as this is what shows the user has reached the target
             gameEngine.timeToReach = None
             # respawn the box
-            targetBox.resetBoxLocation()
+            targetBox.resetBoxLocation(player)
             gameEngine.reachedBoxLatch = 0
             # update the dimensions of the new box so the cursor knows when it has reached the box
             player.reset(targetBox)

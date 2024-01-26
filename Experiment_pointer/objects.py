@@ -162,7 +162,7 @@ class Box():
     
 
 
-    def resetBoxLocation(self,resetColor = None):
+    def resetBoxLocation(self,player,resetColor = None):
         """
         changes location of box and sets it to reset color
         """
@@ -175,8 +175,13 @@ class Box():
                 self.leftCornerXBoxLoc = 0
                 self.leftCornerYBoxLoc = 300
             else:
-                self.leftCornerXBoxLoc = np.random.randint(100,1000)
-                self.leftCornerYBoxLoc = np.random.randint(100,700)
+                # need to set location sufficiently far away from current cursor pos
+                dist = 0
+                while dist < 400:
+                    self.leftCornerXBoxLoc = np.random.randint(100,1000)
+                    self.leftCornerYBoxLoc = np.random.randint(100,700)
+                    dist = np.sqrt((player.rect.x - self.leftCornerXBoxLoc) ** 2 + (player.rect.y - self.leftCornerYBoxLoc) ** 2)
+                
                 if self.writeData is True:
                     # write new locations to datastore
                     self.writeDatastore[self.writeDataStoreIteration,0] = self.leftCornerXBoxLoc
@@ -296,7 +301,7 @@ class Player(pygame.sprite.Sprite):
             self.movex = x
             self.movey = -y
     
-    def update(self):
+    def update(self,targetBox):
         """
         Updates cursor position from keypad
         """
@@ -312,7 +317,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.x = self.readDataStore[self.readDataStoreIteration,0] 
             self.rect.y = self.readDataStore[self.readDataStoreIteration,1] 
             self.readDataStoreIteration += 1
-        return self.checkIfCursorInBox()
+        return self.checkIfCursorInBox(targetBox)
 
         
     def prepareForDataWrite(self,noTimeStamps):
@@ -331,7 +336,7 @@ class Player(pygame.sprite.Sprite):
         self.writeData = True
         
     
-    def checkIfCursorInBox(self):
+    def checkIfCursorInBox(self,targetBox):
         """
         checks if cursor inside box, and if so send signal
         """
@@ -341,12 +346,19 @@ class Player(pygame.sprite.Sprite):
             self.cursorDatastore[self.cursorDatastoreIndex,1:3] = [self.rect.x,self.rect.y]
             self.cursorDatastoreIndex += 1
         # check if target has spawned
+            
         if pygame.time.get_ticks() > self.targetStartTime: # if target has spawned
             # check if the cursor is in the target area
-            if self.targetBoxXmin <= self.rect.x <= self.targetBoxXmax and self.targetBoxYmin <= self.rect.y <= self.targetBoxYmax:
+
+            if pygame.Rect(targetBox.dimensions).colliderect(self.rect):
                 return 1
             else:
                 return 0
+            if False:
+                if self.targetBoxXmin <= self.rect.x <= self.targetBoxXmax and self.targetBoxYmin <= self.rect.y <= self.targetBoxYmax:
+                    return 1
+                else:
+                    return 0
         else:
             return 0
     
@@ -373,7 +385,10 @@ class Player(pygame.sprite.Sprite):
                 self.sharedMemName = BODY_PART_MEM
                 self.sharedMemShape = (noBodyParts,noDataTypes)
                 self.sharedMemSize =  noDataTypes * noBodyParts
-                shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=True)
+                try:
+                    shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=True)
+                except:
+                    shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
                 shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
     
     def processData(self):
@@ -394,6 +409,13 @@ class Player(pygame.sprite.Sprite):
                 # self.rightHandPos = rightHandData[0:3]
                 # self.rightHandDir = rightHandData[3:6]
             else:
+                if self.simulateSharedMemoryOn:
+                    # Write data into shared memory
+                    shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
+                    shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
+                    shared_array[:,0:6] = self.bodyDataStore[self.bodyDataStoreIteration].reshape(51,6)
+                    
+
                 # read from datastore and increment index
                 rightHandData = self.readDataStore[self.readDataStoreIteration] 
                 self.readDataStoreIteration += 1
@@ -401,19 +423,20 @@ class Player(pygame.sprite.Sprite):
 
 
             # both workflows have this adjustment
-            self.rightHandPos = np.matmul(self.calibrationMatrix,rightHandData[0:3])
+            self.rightHandPos = np.matmul(self.calibrationMatrix,rightHandData[0:3] )
             self.rightHandDir = np.matmul(self.calibrationMatrix,rightHandData[3:6])
             
             if self.readData is True and self.simulateSharedMemoryOn:
                 shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
-                shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
+                shared_array_copy = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf).copy()
                 if self.readAdjustedRigidBodies:
                     Q = np.zeros((6,6))
                     Q[0:3,0:3] = self.calibrationMatrix
                     Q[3:6,3:6] = self.calibrationMatrix 
-                    shared_array[:,:6] = np.matmul(Q,self.bodyDataStore[self.bodyDataStoreIteration].reshape(51,6).transpose() ).transpose()
+                    shared_array_copy[:,:6] = np.matmul(Q,shared_array_copy[:,:6].transpose()).transpose()
                 else:
-                    shared_array[:,:6] = self.bodyDataStore[self.bodyDataStoreIteration].reshape(51,6) 
+                    shared_array_copy[:,:6] = self.bodyDataStore[self.bodyDataStoreIteration].reshape(51,6) 
+                rightHandData = shared_array_copy[self.rightHandIndex]
                 self.bodyDataStoreIteration += 1
 
             if self.calibrated is not True:
@@ -496,7 +519,7 @@ class Player(pygame.sprite.Sprite):
         return self.targetStartTime
 
 
-    def calcCursorPosFromHandData(self):
+    def calcCursorPosFromHandData(self,targetBox):
         #print(self.xRange,self.yRange)
         if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
             # if pygame.time.get_ticks() < self.decoderStartTime + 5000:
@@ -520,7 +543,7 @@ class Player(pygame.sprite.Sprite):
             print('1',self.rect.x,self.rect.y)
             self.debugger.disp(3,'X pos', self.xposDECODE,frequency = 50)
             self.debugger.disp(3,'Y pos', self.yposDECODE,frequency = 50)
-            return self.checkIfCursorInBox()
+            return self.checkIfCursorInBox(targetBox)
 
         elif not self.cursorPredictor:
             normalised_x_val = 1 -  (self.rightHandPos[1] - self.userMinXValue) / self.xRange
@@ -530,7 +553,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.x = normalised_x_val * self.worldX
             self.rect.y = normalised_y_Val * self.worldY
             
-            return self.checkIfCursorInBox()
+            return self.checkIfCursorInBox(targetBox)
         else:
             self.rect.x  = self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,0] * self.worldX 
             self.rect.y  = self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,1] * self.worldY
@@ -569,13 +592,15 @@ class Player(pygame.sprite.Sprite):
                 # read data from datastore and increment index
                 rightHandData = self.readDataStore[self.readDataStoreIteration] 
                 self.readDataStoreIteration += 1
+                self.bodyDataStoreIteration += 1
 
         else:
             raise('Need to code this in')
         calibrationFromVector = rightHandData[3:6]
         
         calibrationToVector = np.array([1,0,0])
-        self.calcCalibrationConstants(calibrationToVector,calibrationFromVector)
+        position = rightHandData[0:3]
+        self.calcCalibrationConstants(calibrationToVector,calibrationFromVector,position)
         self.calibratedXValue, self.calibratedYValue =  np.matmul(self.calibrationMatrix,np.array(rightHandData[0:3]))[1:3]
 
         print('Correct plane has been calibrated')
@@ -586,7 +611,7 @@ class Player(pygame.sprite.Sprite):
 
         
 
-    def calcCalibrationConstants(self,calibrationToVector, calibrationFromVector):
+    def calcCalibrationConstants(self,calibrationToVector, calibrationFromVector,position):
         """
         attempts to calibrate for person standing off x axis by finding the transformation
         matrix to transform off axis motion to the standard axes
@@ -602,12 +627,13 @@ class Player(pygame.sprite.Sprite):
         Q[0,1] = np.sin(thetha_rad)
         Q[1,0] = - Q[0,1]
         Q[2,2] = 1
+        self.offset = - position
 
         self.calibrationMatrix = Q.transpose()
 
 
     
-    def updatepos(self,x,y,enforce,offline,positions):
+    def updatepos(self,x,y,enforce,offline,positions,targetBox):
         # note will need to enforce 0<x<960 and 0 < y < 720
         # this is activated if data is streamed
         if enforce and offline: 
@@ -621,7 +647,7 @@ class Player(pygame.sprite.Sprite):
             x = (x-1)/4 * 800   # 1600 - 2400
         self.rect.x = x
         self.rect.y = y
-        return self.checkIfCursorInBox()
+        return self.checkIfCursorInBox(targetBox)
 
     def reset(self,targetBox):
         # changes the target box to be the new dimensions, mainly to assess whether the cursor is in the target box

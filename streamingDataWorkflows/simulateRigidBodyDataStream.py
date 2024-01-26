@@ -60,6 +60,11 @@ except FileNotFoundError: # if file is run from location of file this is needed
             raise Exception('File not found')
 
 
+# Location of game save:
+gameSaveLocation = "../Experiment_pointer/PointerExperimentData/Ashwin_12_01__19_57_trial1_training1.npz"
+data = np.load(gameSaveLocation,allow_pickle=True)
+simulatedDF= data['allBodyPartsData']
+simulatedDF = pd.DataFrame(simulatedDF)
 # initialise shared memory
 shared_Block,sharedArray = streamData.defineSharedMemory(sharedMemoryName= 'Test Rigid Body', dataType= "Bone", noDataTypes= 51)
 

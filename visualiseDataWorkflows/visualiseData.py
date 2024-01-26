@@ -14,7 +14,7 @@ def visualise2DDataFrom3DarrayAnimation(sharedMemoryName = None,noDataTypes = No
     # access the shared memory    
     dataEntries = varsPerDataType * noDataTypes
     SHARED_MEM_NAME = sharedMemoryName
-    shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=False)
+    shared_block = shared_memory.SharedMemory(size= dataEntries * 8, name=SHARED_MEM_NAME, create=True)
     shared_array = np.ndarray(shape=(noDataTypes,varsPerDataType), dtype=np.float64, buffer=shared_block.buf)
 
     # load the most recent shared memory onto a dataframe

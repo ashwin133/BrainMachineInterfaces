@@ -48,17 +48,18 @@ debugMode = True
 timeToReach = None
 
 # DECIDE WHETHER TO READ ONLINE DATA AND WHETHER TO READ OR RECORD DATA
-FETCHDATAFROMREALTIME = True
+FETCHDATAFROMREALTIME = False
 recordData = False
 readData = False
-readRigidBodies = True # turn off if not read data
-readAdjustedRigidBodies = True # turn off if not read data 
+readRigidBodies = False # turn off if not read data
+readAdjustedRigidBodies = False # turn off if not read data 
 showCursorPredictor = False #turn off if not read data 
-readLocation = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB.npz'
+readSharedMemory = False
+readLocation = 'PointerExperimentData/Ashwin_12_01__19_57_trial1_training1.npz'
 writeDataLocation = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB3.npz'
 writeDataLocationPkl = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB3.pkl'
 metadataLocation = 'metadata'
-invertXaxis = True  # necessary when facing opposite direction
+invertXaxis = False  # necessary when facing opposite direction
 metadata = {'MetaData:' 'Pres '
 }
 runDecoderInLoop = False

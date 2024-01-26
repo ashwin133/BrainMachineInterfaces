@@ -81,7 +81,7 @@ def configureForTrainingSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLoca
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 180 # 3 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 120 # 2 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
 
@@ -152,7 +152,7 @@ def configureForTestSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLocation
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 180 # 3 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 120 # 2 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
 

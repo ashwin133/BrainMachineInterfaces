@@ -44,7 +44,7 @@ def runSetup(gameEngine):
 
     clock = pygame.time.Clock()
     pygame.init()
-    gameEngine.world = pygame.display.set_mode([gameEngine.worldx,gameEngine.worldy]) # this is the surface
+    gameEngine.world = pygame.display.set_mode([gameEngine.worldx,gameEngine.worldy],pygame.DOUBLEBUF) # this is the surface
     gameEngine.targetStartTime = 100000
     targetBox = Box(gameEngine.leftCornerXBoxLoc,gameEngine.leftCornerYBoxLoc,gameEngine.boxWidth,gameEngine.boxHeight,gameEngine.colours['RED'],debugger)
     
@@ -158,6 +158,7 @@ def endProgram(gameEngine,player,targetBox,debugger):
             del gameEngine.world
             del player.images
             del player.image
+            del player.font
             np.savez(gameEngine.writeDataLocation,dataStore = player.datastore,targetBoxLocs = targetBox.writeDatastore,
                     targetBoxHitTimes = gameEngine.boxHitTimes,targetBoxAppearTimes = player.targetAppearTimes,
                     allBodyPartsData = player.allBodyPartsDatastore,boxSizeVarName = (gameEngine.boxHeight,gameEngine.boxWidth),

@@ -11,6 +11,7 @@ from multiprocessing import shared_memory
 import time
 import sys 
 
+from lib_streamAndRenderDataWorkflows.config_streaming import renderingBodyParts,simpleBodyParts
 
 sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
 
@@ -257,6 +258,11 @@ class Player(pygame.sprite.Sprite):
         self.simulateSharedMemoryOn = False
         self.readAdjustedRigidBodies = False
 
+        font_size = 24
+        self.font = pygame.font.SysFont(None, font_size)
+
+
+
         # set properties of the target box
         self.boxColor = targetBox.boxColor
         self.targetBoxXmin = targetBox.leftCornerXBoxLoc
@@ -291,6 +297,10 @@ class Player(pygame.sprite.Sprite):
         self.DOFmin = self.model['minDOF']
         self.DOFmax = self.model['maxDOF']
         self.DOFOffset = self.model['DOFOffset']
+        self.maxX =  -np.inf
+        self.maxY = - np.inf
+        self.minX = np.inf
+        self.minY = np.inf
 
     
     def control(self,x,y):
@@ -399,11 +409,14 @@ class Player(pygame.sprite.Sprite):
             if self.readData is not True:
                 shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
                 shared_array = np.ndarray(shape=self.sharedMemShape, dtype=np.float64, buffer=shared_block.buf)
+                for i in simpleBodyParts:
+                    shared_array[i,:3] += self.offset
                 rightHandData = np.array(shared_array[ self.rightHandIndex])
+                
                 if self.datastore is not None: # record data if requested
                     self.datastore[self.datastoreIteration,:] = rightHandData[:6]
                     self.datastoreIteration += 1
-                    # now write all body part info to database
+                    # now write all body part info to database including offset
                     self.allBodyPartsDatastore[self.allBodyPartsDataStoreIteration,:,:] =  np.array(shared_array[:,0:6])
                     self.allBodyPartsDataStoreIteration += 1
                 # self.rightHandPos = rightHandData[0:3]
@@ -423,8 +436,9 @@ class Player(pygame.sprite.Sprite):
 
 
             # both workflows have this adjustment
-            self.rightHandPos = np.matmul(self.calibrationMatrix,rightHandData[0:3] )
+            self.rightHandPos = np.matmul(self.calibrationMatrix,rightHandData[0:3])
             self.rightHandDir = np.matmul(self.calibrationMatrix,rightHandData[3:6])
+            #print("right hand w offset:", self.rightHandPos,self.userMinXValue,self.userMaxXValue)
             
             if self.readData is True and self.simulateSharedMemoryOn:
                 shared_block = shared_memory.SharedMemory(size= self.sharedMemSize * 8, name=self.sharedMemName, create=False)
@@ -433,9 +447,11 @@ class Player(pygame.sprite.Sprite):
                     Q = np.zeros((6,6))
                     Q[0:3,0:3] = self.calibrationMatrix
                     Q[3:6,3:6] = self.calibrationMatrix 
+
                     shared_array_copy[:,:6] = np.matmul(Q,shared_array_copy[:,:6].transpose()).transpose()
                 else:
                     shared_array_copy[:,:6] = self.bodyDataStore[self.bodyDataStoreIteration].reshape(51,6) 
+
                 rightHandData = shared_array_copy[self.rightHandIndex]
                 self.bodyDataStoreIteration += 1
 
@@ -522,19 +538,35 @@ class Player(pygame.sprite.Sprite):
     def calcCursorPosFromHandData(self,targetBox):
         #print(self.xRange,self.yRange)
         if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
-            # if pygame.time.get_ticks() < self.decoderStartTime + 5000:
-            #     self.XrangeFactor = 1
-            #     self.YrangeFactor = 1
-            #     self.maxX = -9000
-            #     self.minX = 10000
-            #     self.maxY = -10000
-            #     self.minY = 10000
-            # else:
+            
+            
+            # self.maxX = max(self.maxX,self.xposDECODE * self.worldX)
+            # self.minX = min(self.minX, self.xposDECODE * self.worldX)
+            # self.maxY = max(self.maxY,self.yposDECODE * self.worldY)
+            # self.minY = min(self.minY, self.yposDECODE * self.worldY)
+            
+            # print("xmaxmin:", self.maxX, self.minX)
+            # print("ymaxmin:", self.maxY, self.minY)
+            # print("X pos decode", self.xposDECODE * self.worldX)
+
+            # print("Y pos decode", self.yposDECODE * self.worldY)
+            # if pygame.time.get_ticks() > self.decoderStartTime + 10000:
+            #     self.offsetX = self.minX
+            #     self.offsetY = self.minY
             #     self.XrangeFactor = (self.maxX - self.minX)/1100
             #     self.YrangeFactor = (self.maxY - self.minY)/800
-
-            self.rect.x = self.xposDECODE * self.worldX #* 1/self.XrangeFactor
-            self.rect.y = self.yposDECODE * self.worldY #* 1/self.YrangeFactor
+            #     print("X adj:", self.offsetX, self.XrangeFactor)
+            #     print("Y adj:", self.offsetY, self.YrangeFactor)
+            #     print("X offset added:",self.xposDECODE * self.worldX - self.offsetX )
+            #     print("X:",(self.xposDECODE * self.worldX  - self.offsetX) * 1/self.XrangeFactor )
+            #     self.rect.x = (self.xposDECODE * self.worldX  - self.offsetX) * 1/self.XrangeFactor 
+            #     self.rect.y = (self.yposDECODE * self.worldY  - self.offsetY )* 1/self.YrangeFactor 
+            # else:
+            #     
+            self.rect.x = self.xposDECODE * self.worldX 
+            self.rect.y = self.yposDECODE * self.worldY 
+            # self.rect.x = self.xposDECODE * self.worldX 
+            # self.rect.y = self.yposDECODE * self.worldY 
             # if np.abs(self.rect.x) < 10000 and np.abs(self.rect.y) < 10000:
             #     self.maxX = max(self.maxX,self.rect.x)
             #     self.maxY = max(self.maxY,self.rect.y)
@@ -627,7 +659,7 @@ class Player(pygame.sprite.Sprite):
         Q[0,1] = np.sin(thetha_rad)
         Q[1,0] = - Q[0,1]
         Q[2,2] = 1
-        self.offset = - position
+        self.offset = -position
 
         self.calibrationMatrix = Q.transpose()
 

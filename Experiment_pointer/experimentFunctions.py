@@ -81,7 +81,7 @@ def configureForTrainingSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLoca
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 120 # 2 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 150 # 2 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
 
@@ -152,7 +152,7 @@ def configureForTestSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLocation
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 120 # 2 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 150 # 2 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
 
@@ -223,7 +223,7 @@ def configureForDecoder(gameEngine,worldx,worldy,fps,saveLocation,saveLocationPk
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 180 # 3 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 150 # 3 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
 
@@ -609,6 +609,9 @@ def fitModelToData(mode,tester,compPca,savePath,colorMap = None,plot = False,DOF
         scoreLabel = 'l' +  ', ' + str(DOFOffset)
 
     # now calculate average angular error on the test dataset
+    if goCues1[0] == targetHits1[0]:
+        del goCues1[0]
+        del targetHits1[0]
     trueAngles,estAngles, angularErrors,times,magsTrue,magsEst,trialMagDifferences = feedTargetMotionCursorPos(Y_test_true,Y_pred,goCues1,targetHits1,timeStamps1,ignoreTargetMotionTimesLessThan)
     percentErrors = 100 * [(abs(estAngles[i] - trueAngles[i]))/trueAngles[i] for i in range(0,len(trueAngles))]
     avgPercentError = np.average((percentErrors)) 

@@ -41,8 +41,9 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
                             cursorPredictor.calcCursorPosFromHandData(targetBox)
                         debugger.disp(4,'X',player.rightHandPos[1])
                         debugger.disp(4,'Y',player.rightHandPos[2])
-
-        # get all key presses
+        text_surface_x = player.font.render(str(player.rect.x), True, (255, 255, 255))  # White color
+        text_surface_y = player.font.render(str(player.rect.y), True, (255, 255, 255))  # White color
+# get all key presses
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return endProgram(gameEngine,player,targetBox,debugger)
@@ -128,6 +129,9 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
         debugger.disp(4,'Player X pos',player_list.sprites()[0],frequency = 20)
         player_list.draw(gameEngine.world) # draw player
 
+        
+        gameEngine.world.blit(text_surface_x, (0.93 * gameEngine.worldx,0.9* gameEngine.worldy ))
+        gameEngine.world.blit(text_surface_y, (0.97 * gameEngine.worldx,0.9* gameEngine.worldy ))
         if pygame.time.get_ticks() > gameEngine.targetStartTime:
             # draw box
             pygame.draw.rect(gameEngine.world, targetBox.boxColor, pygame.Rect(targetBox.dimensions)) 
@@ -136,7 +140,7 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
         # advance clock and display
 
         
-        pygame.display.flip()
+        pygame.display.update()
         clock.tick(gameEngine.fps)
 
 #runGame(gameEngine,player,debugger,targetBox)

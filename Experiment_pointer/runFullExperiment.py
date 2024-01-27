@@ -30,17 +30,18 @@ fps = 80
 # and only data analysis needs to be performed
 runPostExperimentalAnalysisOnly = True
 
-saveGameLocation = "Experiment_pointer/PointerExperimentData/Thanh_26_01__10_23" # must have format of "Name_dd_mm__hh_mm_metadata" with no file extension
+saveGameLocation = "Experiment_pointer/PointerExperimentData/Ash_27_01_15_39" # must have format of "Name_dd_mm__hh_mm_metadata" with no file extension
 
 
 if runPostExperimentalAnalysisOnly == False:
 
-    # --- Phase 1: 4 training trials, each 3 minutes ---
-    print("---- RUNNING TRAINING TRIAL 1 --- DURATION: 2 MINUTES \n")
+#     # --- Phase 1: 4 training trials, each 3 minutes ---
+    # ---- TRAINING TRIAL 1
+    print("--- RUNNING TRAINING TRIAL 1 --- DURATION: 2 MINUTES --- \n")
+
     # Set Game 1 save Locations
     trainingGameSaveLocation1 = saveGameLocation + "_training1.npz"
     trainingGameSaveLocationPkl1 = saveGameLocation + "_training1.pkl"
-
 
     initiateUserConfirmToProceed()
     gameEngine_trial1 = gameEngine
@@ -50,7 +51,7 @@ if runPostExperimentalAnalysisOnly == False:
 
     # check if data saved an inform user if game has not saved
     verifySaved1 = verifyGameSaveData(trainingGameSaveLocation1,trainingGameSaveLocationPkl1)
-    informUserGameSave(verifySaved=verifySaved1  )
+    informUserGameSave(verifySaved=verifySaved1 )
 
     # Delete data after saved
     del player,targetBox,gameEngine_trial1, clock, player_list,debugger,cursorPredictor 
@@ -202,33 +203,33 @@ END OF PHASE 2
 
 """
 PHASE 3: Testing decoders in the closed loop
-"""
+# """
 print("--- PHASE 3: Testing out decoders in the closed loop ---")
 
-#     # --- Decoder A ---
-#     print("--- RUNNING DECODER TRIAL A --- DURATION: 3 MINUTES --- \n")
+# # --- Decoder A ---
+print("--- RUNNING DECODER TRIAL A --- DURATION: 3 MINUTES --- \n")
 
-#     # Set Test game save Locations
-#     decoderASaveLocation = saveGameLocation + "_usingDecoderA.npz"
-#     decoderASaveLocationPkl = saveGameLocation + "_usingDecoderA.pkl"
-#     decoderAMdlLocation = saveGameLocation + '_linearRigidBodyAModel.npz'
+# Set Test game save Locations
+decoderASaveLocation = saveGameLocation + "_usingDecoderA.npz"
+decoderASaveLocationPkl = saveGameLocation + "_usingDecoderA.pkl"
+decoderAMdlLocation = saveGameLocation + '_linearRigidBodyAModel.npz'
 
-#     initiateUserConfirmToProceed()
-#     gameEngine_decoderA = gameEngine
-#     gameEngine_decoderA = configureForDecoder(gameEngine=gameEngine_decoderA,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderASaveLocation,
-#                         saveLocationPkl=decoderASaveLocationPkl,decoder= 'A', decoderLocation = decoderAMdlLocation)
+initiateUserConfirmToProceed()
+gameEngine_decoderA = gameEngine
+gameEngine_decoderA = configureForDecoder(gameEngine=gameEngine_decoderA,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderASaveLocation,
+                saveLocationPkl=decoderASaveLocationPkl,decoder= 'A', decoderLocation = decoderAMdlLocation)
 
-#     player,targetBox,gameEngine_decoderA, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderA)
-#     runGame(gameEngine=gameEngine_decoderA, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+player,targetBox,gameEngine_decoderA, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderA)
+runGame(gameEngine=gameEngine_decoderA, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
 
-#     # check if data saved an inform user if game has not saved
-#     verifySaved_decoderA = verifyGameSaveData(decoderASaveLocation,decoderASaveLocationPkl)
-#     informUserGameSave(verifySaved=verifySaved_decoderA )
+# check if data saved an inform user if game has not saved
+verifySaved_decoderA = verifyGameSaveData(decoderASaveLocation,decoderASaveLocationPkl)
+informUserGameSave(verifySaved=verifySaved_decoderA )
 
-#     # Delete data after saved
-#     del player,targetBox,gameEngine_decoderA, clock, player_list,debugger,cursorPredictor 
+# Delete data after saved
+del player,targetBox,gameEngine_decoderA, clock, player_list,debugger,cursorPredictor 
 
-#     initiateUserConfirmToProceed(forBreak=True)
+initiateUserConfirmToProceed(forBreak=True)
 
 
 # --- Decoder B ---

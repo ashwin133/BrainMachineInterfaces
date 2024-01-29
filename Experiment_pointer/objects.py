@@ -315,7 +315,7 @@ class Player(pygame.sprite.Sprite):
         """
         Updates cursor position from keypad
         """
-        
+        print("update is being run")
         # updates cursor position to be the curr pos plus the next control 
         if self.readData is not True:
             self.rect.x = self.rect.x + self.movex
@@ -463,6 +463,7 @@ class Player(pygame.sprite.Sprite):
                 self.userMinYValue = min(self.rightHandPos[2],self.userMinYValue)
             
             if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
+                
                 if not hasattr(self, 'fullCalibrationMatrix'):
                     self.fullCalibrationMatrix = np.zeros((6,6))
                     self.fullCalibrationMatrix[0:3,0:3] = self.calibrationMatrix
@@ -537,47 +538,134 @@ class Player(pygame.sprite.Sprite):
 
     def calcCursorPosFromHandData(self,targetBox):
         #print(self.xRange,self.yRange)
+        # feature control
+        rangeControl = True
+        alphaX = 0# this sets how large to artificially extend the control mapping, e.g.
+        # setting alphaX to worldX means the users current explored control mapping actually maps from -X to 3X
+        alphaY = 0
+
         if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
             
-            
-            # self.maxX = max(self.maxX,self.xposDECODE * self.worldX)
-            # self.minX = min(self.minX, self.xposDECODE * self.worldX)
-            # self.maxY = max(self.maxY,self.yposDECODE * self.worldY)
-            # self.minY = min(self.minY, self.yposDECODE * self.worldY)
-            
-            # print("xmaxmin:", self.maxX, self.minX)
-            # print("ymaxmin:", self.maxY, self.minY)
-            # print("X pos decode", self.xposDECODE * self.worldX)
+            if rangeControl:
+                # Try this in lab
 
-            # print("Y pos decode", self.yposDECODE * self.worldY)
-            # if pygame.time.get_ticks() > self.decoderStartTime + 10000:
-            #     self.offsetX = self.minX
-            #     self.offsetY = self.minY
-            #     self.XrangeFactor = (self.maxX - self.minX)/1100
-            #     self.YrangeFactor = (self.maxY - self.minY)/800
-            #     print("X adj:", self.offsetX, self.XrangeFactor)
-            #     print("Y adj:", self.offsetY, self.YrangeFactor)
-            #     print("X offset added:",self.xposDECODE * self.worldX - self.offsetX )
-            #     print("X:",(self.xposDECODE * self.worldX  - self.offsetX) * 1/self.XrangeFactor )
-            #     self.rect.x = (self.xposDECODE * self.worldX  - self.offsetX) * 1/self.XrangeFactor 
-            #     self.rect.y = (self.yposDECODE * self.worldY  - self.offsetY )* 1/self.YrangeFactor 
-            # else:
-            #     
-            self.rect.x = self.xposDECODE * self.worldX 
-            self.rect.y = self.yposDECODE * self.worldY 
-            # self.rect.x = self.xposDECODE * self.worldX 
-            # self.rect.y = self.yposDECODE * self.worldY 
-            # if np.abs(self.rect.x) < 10000 and np.abs(self.rect.y) < 10000:
-            #     self.maxX = max(self.maxX,self.rect.x)
-            #     self.maxY = max(self.maxY,self.rect.y)
-            #     self.minX = min(self.minX,self.rect.x)
-            #     self.minY = min(self.minY,self.rect.y)
-            print('1',self.rect.x,self.rect.y)
+                # for the first try find the offset x and y decoded position
+                # if not hasattr(self, 'xPosOffset'):
+                #     # Here calibrate the starting value to map to the centre of the screen
+                #     self.xPosOffset = self.xposDECODE * self.worldX + self.worldX//2
+                #     self.yPosOffset = self.yposDECODE * self.worldY + self.worldY//2
+                
+                # # This always executes
+                # xPos = self.xposDECODE * self.worldX  - self.xPosOffset
+                
+                # yPos = self.yposDECODE * self.worldY - self.yPosOffset
+
+                xPos = self.xposDECODE * self.worldX 
+                
+                yPos = self.yposDECODE * self.worldY 
+                
+                print('rawPos',xPos,yPos)
+                
+
+                if pygame.time.get_ticks() > self.decoderStartTime + 3000:
+                    # After a short delay build up a range of min and max x,y values
+                    self.maxX = max(self.maxX,self.xposDECODE * self.worldX)
+                    self.minX = min(self.minX, self.xposDECODE * self.worldX)
+                    self.maxY = max(self.maxY,self.yposDECODE * self.worldY)
+                    self.minY = min(self.minY, self.yposDECODE * self.worldY)
+
+                    # FOR DEBUGGING PURPOSES CAN READ OUT MIN MAX VALUES
+                    # print("xmaxmin:", self.maxX, self.minX)
+                    # print("ymaxmin:", self.maxY, self.minY)
+                    # print("X pos decode", self.xposDECODE * self.worldX)
+                
+                if pygame.time.get_ticks() > self.decoderStartTime + 8000:
+                    # After the above functionality has had sufficient time, start to calculate the resizing parameters
+                    # to enable the offsetted control mapping to be in the user's current mapping range
+
+                    # Calculate linear transformation for X
+                    # After a short delay build up a range of min and max x,y values
+                    self.maxX = max(self.maxX,self.xposDECODE * self.worldX)
+                    self.minX = min(self.minX, self.xposDECODE * self.worldX)
+                    self.maxY = max(self.maxY,self.yposDECODE * self.worldY)
+                    self.minY = min(self.minY, self.yposDECODE * self.worldY)
+                    grad_x = (self.worldX + 2* alphaX)/(self.maxX - self.minX)
+                    intercept_x = - (alphaX + self.minX * (self.worldX + 2 * alphaX) / (self.maxX - self.minX) )
+
+                    print('X grad,c',grad_x,intercept_x)
+
+                    # Calculate linear transformation for Y
+                    grad_y = (self.worldY + 2 * alphaY) / (self.maxY - self.minY)
+                    intercept_y = - (alphaY + self.minY * (self.worldY + 2 * alphaY) / (self.maxY - self.minY) )
+
+                    print('Y grad,c',grad_y,intercept_y)
+                    xPos = xPos * grad_x + intercept_x
+                    yPos = yPos * grad_y + intercept_y
+                    print("Actual Pos:",xPos,yPos)
+                
+                
+                # This always executes
+                diffX = xPos -  self.rect.x 
+                diffY = yPos - self.rect.y
+                print(diffX,diffY)
+
+                # Rate limiter
+                if abs(diffX) > 10:
+                    # rate being limited
+                    self.rect.x += 10 * (diffX / abs(diffX))
+                else:
+                    self.rect.x = xPos
+                
+                if abs(diffY) > 10:
+                    # rate being limited
+                    self.rect.y += 10 * (diffY/abs(diffY))
+                else:
+                    self.rect.y = yPos
+
+
+            else:
+
+                # self.maxX = max(self.maxX,self.xposDECODE * self.worldX)
+                # self.minX = min(self.minX, self.xposDECODE * self.worldX)
+                # self.maxY = max(self.maxY,self.yposDECODE * self.worldY)
+                # self.minY = min(self.minY, self.yposDECODE * self.worldY)
+                
+                # print("xmaxmin:", self.maxX, self.minX)
+                # print("ymaxmin:", self.maxY, self.minY)
+                # print("X pos decode", self.xposDECODE * self.worldX)
+
+                # print("Y pos decode", self.yposDECODE * self.worldY)
+                # if pygame.time.get_ticks() > self.decoderStartTime + 10000:
+                #     self.offsetX = self.minX
+                #     self.offsetY = self.minY
+                #     self.XrangeFactor = (self.maxX - self.minX)/1100
+                #     self.YrangeFactor = (self.maxY - self.minY)/800
+                #     print("X adj:", self.offsetX, self.XrangeFactor)
+                #     print("Y adj:", self.offsetY, self.YrangeFactor)
+                #     print("X offset added:",self.xposDECODE * self.worldX - self.offsetX )
+                #     print("X:",(self.xposDECODE * self.worldX  - self.offsetX) * 1/self.XrangeFactor )
+                #     self.rect.x = (self.xposDECODE * self.worldX  - self.offsetX) * 1/self.XrangeFactor 
+                #     self.rect.y = (self.yposDECODE * self.worldY  - self.offsetY )* 1/self.YrangeFactor 
+                # else:
+                #     
+                pass
+                #self.rect.x = self.xposDECODE * self.worldX 
+                
+                #self.rect.y = self.yposDECODE * self.worldY 
+                # self.rect.x = self.xposDECODE * self.worldX 
+                # self.rect.y = self.yposDECODE * self.worldY 
+                # if np.abs(self.rect.x) < 10000 and np.abs(self.rect.y) < 10000:
+                #     self.maxX = max(self.maxX,self.rect.x)
+                #     self.maxY = max(self.maxY,self.rect.y)
+                #     self.minX = min(self.minX,self.rect.x)
+                #     self.minY = min(self.minY,self.rect.y)
             self.debugger.disp(3,'X pos', self.xposDECODE,frequency = 50)
             self.debugger.disp(3,'Y pos', self.yposDECODE,frequency = 50)
             return self.checkIfCursorInBox(targetBox)
 
         elif not self.cursorPredictor:
+            print("Cursor position is being calculated from control movements")
+
             normalised_x_val = 1 -  (self.rightHandPos[1] - self.userMinXValue) / self.xRange
             normalised_y_Val = 1 - (self.rightHandPos[2] - self.userMinYValue) / self.yRange
             #print(normalised_x_val)
@@ -587,6 +675,7 @@ class Player(pygame.sprite.Sprite):
             
             return self.checkIfCursorInBox(targetBox)
         else:
+            print("Cursor position is being calculated from stored data")
             self.rect.x  = self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,0] * self.worldX 
             self.rect.y  = self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,1] * self.worldY
             #print('Actual',pygame.time.get_ticks(),self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,0],self.cursorPredictorDatastore[self.cursorPredictorDatastoreIteration,1])
@@ -666,6 +755,7 @@ class Player(pygame.sprite.Sprite):
 
     
     def updatepos(self,x,y,enforce,offline,positions,targetBox):
+        print("Update pos is being run")
         # note will need to enforce 0<x<960 and 0 < y < 720
         # this is activated if data is streamed
         if enforce and offline: 

@@ -24,7 +24,7 @@ from Experiment_pointer.experimentFunctions import *
 # set world x and world y and fps for whole experiment
 worldx = 1100
 worldy = 800
-fps = 80
+fps = 60
 
 # Set this True if data has already been gathered from the experiment 
 # and only data analysis needs to be performed

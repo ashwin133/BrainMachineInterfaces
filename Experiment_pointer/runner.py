@@ -24,8 +24,7 @@ from Experiment_pointer.setup import runSetup, endProgram
 def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = None,clock = None):
     
     while gameEngine.main:
-        timestart = time.perf_counter()
-        debugger.disp(4,'Time of loop', timestart)
+        startTime = time.perf_counter()
         # either get movement from data
         if gameEngine.FETCHDATAFROMREALTIME:
                 player.fetchSharedMemoryData()
@@ -141,6 +140,9 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
 
         
         pygame.display.update()
+        endTime = time.perf_counter()
+                    
+        #print('loop time: ',endTime-startTime)
         clock.tick(gameEngine.fps)
 
 #runGame(gameEngine,player,debugger,targetBox)

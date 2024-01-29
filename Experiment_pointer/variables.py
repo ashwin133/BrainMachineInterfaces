@@ -16,7 +16,7 @@ worldy = 800
 
 LATENCY_TEST = False
 
-fps = 80 # frame rate
+fps = 60 # frame rate
 ani = 4 # animation cycles # animate simple movements repeatedly
 
 # colours
@@ -48,7 +48,7 @@ debugMode = True
 timeToReach = None
 
 # DECIDE WHETHER TO READ ONLINE DATA AND WHETHER TO READ OR RECORD DATA
-FETCHDATAFROMREALTIME = False
+FETCHDATAFROMREALTIME = True
 recordData = False
 readData = False
 readRigidBodies = False # turn off if not read data
@@ -111,3 +111,4 @@ gameEngine = gameStatistics(worldx,worldy,LATENCY_TEST,fps,ani,colours,main,time
                  retrieveCursorDataFromModelFile = retrieveCursorDataFromModelFile,modelReadLocation = modelReadLocation,decoderType = decoderType,writeDataLocationPkl = writeDataLocationPkl,invertXaxis=invertXaxis)
 
 
+# FEATURE CONTROL

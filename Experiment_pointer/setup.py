@@ -50,6 +50,8 @@ def runSetup(gameEngine):
     
 
     player = Player(targetBox,gameEngine.colours, gameEngine.targetStartTime,gameEngine.worldx,gameEngine.worldy,debugger)   # spawn player
+    
+    
     player.rect.x = gameEngine.worldx // 2   # go to x
     player.rect.y = gameEngine.worldy // 2   # go to y
     # put shared memory in player

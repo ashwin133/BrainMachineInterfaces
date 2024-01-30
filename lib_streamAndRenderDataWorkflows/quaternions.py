@@ -6,6 +6,9 @@ quaternions is derived from: https://www.meccanismocomplesso.org/en/hamiltons-qu
 import matplotlib.pyplot as plt
 
 class quaternionVector:
+    """
+    Class to convert 
+    """
     def __init__(self, loc, quaternion):
         self.pos = loc
         self.quaternion = quaternion

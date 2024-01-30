@@ -550,33 +550,57 @@ class Player(pygame.sprite.Sprite):
                 # Try this in lab
 
                 # for the first try find the offset x and y decoded position
-                # if not hasattr(self, 'xPosOffset'):
-                #     # Here calibrate the starting value to map to the centre of the screen
-                #     self.xPosOffset = self.xposDECODE * self.worldX + self.worldX//2
-                #     self.yPosOffset = self.yposDECODE * self.worldY + self.worldY//2
-                
-                # # This always executes
-                # xPos = self.xposDECODE * self.worldX  - self.xPosOffset
-                
-                # yPos = self.yposDECODE * self.worldY - self.yPosOffset
+                if not hasattr(self, 'xPosOffset'):
+                    # Here calibrate the starting value to map to the centre of the screen
+                    self.xPosOffset = self.xposDECODE * self.worldX - self.worldX//2
+                    self.yPosOffset = self.yposDECODE * self.worldY - self.worldY//2
+                    self.xList = []
+                    self.yList = []
+                    self.xPosPrev = self.worldX //2
+                    self.yPosPrev = self.worldY //2
 
-                xPos = self.xposDECODE * self.worldX 
                 
-                yPos = self.yposDECODE * self.worldY 
+                # This always executes
+                xPos = self.xposDECODE * self.worldX  - self.xPosOffset
+                
+                yPos = self.yposDECODE * self.worldY - self.yPosOffset
+
+                # This always executes
+                diffX = xPos -  self.xPosPrev
+                diffY = yPos - self.yPosPrev
+                print(diffX,diffY)
+
+                # Rate limiter
+                if abs(diffX) > 50:
+                    # rate being limited
+                    xPos = self.xPosPrev +  50 * (diffX / abs(diffX))
+                else:
+                    pass
+                
+                if abs(diffY) > 50:
+                    # rate being limited
+                    yPos = self.yPosPrev +  50 * (diffY/abs(diffY))
+                else:
+                    pass
+
                 
                 print('rawPos',xPos,yPos)
                 
 
                 if pygame.time.get_ticks() > self.decoderStartTime + 3000:
                     # After a short delay build up a range of min and max x,y values
-                    self.maxX = max(self.maxX,self.xposDECODE * self.worldX)
-                    self.minX = min(self.minX, self.xposDECODE * self.worldX)
-                    self.maxY = max(self.maxY,self.yposDECODE * self.worldY)
-                    self.minY = min(self.minY, self.yposDECODE * self.worldY)
+                    if xPos > 1000:
+                        print("debug") # There is a problem with the model being unstable 
+                    self.maxX = max(self.maxX,xPos)
+                    self.minX = min(self.minX, xPos)
+                    self.maxY = max(self.maxY,yPos)
+                    self.minY = min(self.minY, yPos)
+                    self.xList.append(xPos)
+                    self.yList.append(yPos)
 
                     # FOR DEBUGGING PURPOSES CAN READ OUT MIN MAX VALUES
-                    # print("xmaxmin:", self.maxX, self.minX)
-                    # print("ymaxmin:", self.maxY, self.minY)
+                    print("xmaxmin:", self.maxX, self.minX)
+                    print("ymaxmin:", self.maxY, self.minY)
                     # print("X pos decode", self.xposDECODE * self.worldX)
                 
                 if pygame.time.get_ticks() > self.decoderStartTime + 8000:
@@ -585,10 +609,11 @@ class Player(pygame.sprite.Sprite):
 
                     # Calculate linear transformation for X
                     # After a short delay build up a range of min and max x,y values
-                    self.maxX = max(self.maxX,self.xposDECODE * self.worldX)
-                    self.minX = min(self.minX, self.xposDECODE * self.worldX)
-                    self.maxY = max(self.maxY,self.yposDECODE * self.worldY)
-                    self.minY = min(self.minY, self.yposDECODE * self.worldY)
+                    
+                    self.maxX = max(self.maxX,xPos)
+                    self.minX = min(self.minX,xPos)
+                    self.maxY = max(self.maxY,yPos)
+                    self.minY = min(self.minY,yPos)
                     grad_x = (self.worldX + 2* alphaX)/(self.maxX - self.minX)
                     intercept_x = - (alphaX + self.minX * (self.worldX + 2 * alphaX) / (self.maxX - self.minX) )
 
@@ -603,26 +628,6 @@ class Player(pygame.sprite.Sprite):
                     yPos = yPos * grad_y + intercept_y
                     print("Actual Pos:",xPos,yPos)
                 
-                
-                # This always executes
-                diffX = xPos -  self.rect.x 
-                diffY = yPos - self.rect.y
-                print(diffX,diffY)
-
-                # Rate limiter
-                if abs(diffX) > 10:
-                    # rate being limited
-                    self.rect.x += 10 * (diffX / abs(diffX))
-                else:
-                    self.rect.x = xPos
-                
-                if abs(diffY) > 10:
-                    # rate being limited
-                    self.rect.y += 10 * (diffY/abs(diffY))
-                else:
-                    self.rect.y = yPos
-
-
             else:
 
                 # self.maxX = max(self.maxX,self.xposDECODE * self.worldX)

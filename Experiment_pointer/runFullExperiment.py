@@ -192,6 +192,8 @@ np.savez( saveGameLocation + '_linearRigidBodyCModel.npz', modelCoeff = angularI
 angularInfoDictD = fitModelToData(mode = 'RigidBodiesSetD',tester = 'linear', \
 compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
 
+
+
 # Save model 
 np.savez(saveGameLocation + '_linearRigidBodyDModel.npz', modelCoeff = angularInfoDictD['Coeff'],modelIntercept = angularInfoDictD['Intercept'],minDOF = angularInfoDictD['MinDOF'],
         maxDOF = angularInfoDictD['MaxDOF'], DOFOffset = angularInfoDictD['DOFOffset'], predCursorPos = angularInfoDictD['PredCursorPos'])

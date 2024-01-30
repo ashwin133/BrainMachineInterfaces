@@ -574,11 +574,19 @@ def fitModelToData(mode,tester,compPca,savePath,colorMap = None,plot = False,DOF
         # predict for trial 1
         Y_test_linear = reg.predict(X_test_linear)
         score = reg.score(X_test_linear,cursorPos1)
-        #print('Score:' , score)
+        print('Score:' , score)
         Y_pred = Y_test_linear
         Y_test_true = cursorPosTest
 
-        
+    elif tester == 'ridge':
+        Y_train = cursorPosTraining
+        reg  = linear_model.Ridge().fit(X_train, Y_train)
+        # predict for trial 1
+        Y_test_linear = reg.predict(X_test_linear)
+        score = reg.score(X_test_linear,cursorPos1)
+        print('Score:' , score)
+        Y_pred = Y_test_linear
+        Y_test_true = cursorPosTest
 
     if plot:
         correctY = cursorPosTest
@@ -626,6 +634,10 @@ def fitModelToData(mode,tester,compPca,savePath,colorMap = None,plot = False,DOF
         modelIntercept = reg.intercept_
     elif tester == 'linear':
         label = type + ', l'  + ', ' + str(DOFOffset) + ',<' + str(ignoreTargetMotionTimesLessThan) 
+        modelCoeff = reg.coef_
+        modelIntercept = reg.intercept_
+    elif tester == 'ridge':
+        label = type + ', r'  + ', ' + str(DOFOffset) + ',<' + str(ignoreTargetMotionTimesLessThan) 
         modelCoeff = reg.coef_
         modelIntercept = reg.intercept_
 

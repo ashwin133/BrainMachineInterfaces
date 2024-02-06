@@ -51,7 +51,12 @@ def runSetup(gameEngine):
 
     player = Player(targetBox,gameEngine.colours, gameEngine.targetStartTime,gameEngine.worldx,gameEngine.worldy,debugger)   # spawn player
     
-    
+    # Set ability for player to use rotation of control body instead of position
+    if gameEngine.useRotation:
+        player.useRotation = True
+    else:
+        player.useRotation = False
+
     player.rect.x = gameEngine.worldx // 2   # go to x
     player.rect.y = gameEngine.worldy // 2   # go to y
     # put shared memory in player
@@ -161,6 +166,10 @@ def endProgram(gameEngine,player,targetBox,debugger):
             del player.images
             del player.image
             del player.font
+            if os.getcwd() == "/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces":
+                if "Experiment_pointer" not in gameEngine.writeDataLocation:
+                    os.chdir(os.getcwd() + "/Experiment_pointer")
+
             np.savez(gameEngine.writeDataLocation,dataStore = player.datastore,targetBoxLocs = targetBox.writeDatastore,
                     targetBoxHitTimes = gameEngine.boxHitTimes,targetBoxAppearTimes = player.targetAppearTimes,
                     allBodyPartsData = player.allBodyPartsDatastore,boxSizeVarName = (gameEngine.boxHeight,gameEngine.boxWidth),

@@ -55,9 +55,9 @@ readRigidBodies = False # turn off if not read data
 readAdjustedRigidBodies = False # turn off if not read data 
 showCursorPredictor = False #turn off if not read data 
 readSharedMemory = False
-readLocation = 'PointerExperimentData/Ashwin_12_01__19_57_trial1_training1.npz'
-writeDataLocation = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB3.npz'
-writeDataLocationPkl = 'PointerExperimentData/23_11_ashTrial1_120s_test_usingModelDecoderB3.pkl'
+readLocation = 'PointerExperimentData/30_01_ash.npz'
+writeDataLocation = 'PointerExperimentData/30_01_ash.npz'
+writeDataLocationPkl = 'PointerExperimentData/30_01_ash.pkl'
 metadataLocation = 'metadata'
 invertXaxis = False  # necessary when facing opposite direction
 metadata = {'MetaData:' 'Pres '
@@ -68,6 +68,8 @@ retrieveCursorDataFromModelFile = False
 modelReadLocation = 'PointerExperimentData/linearRigidBodyDModel.npz'
 
 
+# Use rotational motion for control 
+useRotation = True
 
 handDataReadVarName = 'dataStore'
 targetBoxReadVarName = 'targetBoxLocs'
@@ -108,7 +110,9 @@ gameEngine = gameStatistics(worldx,worldy,LATENCY_TEST,fps,ani,colours,main,time
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
                  leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
                  readAdjustedRigidBodies,showCursorPredictor,cursorMotionDatastoreLocation,runDecoderInLoop,
-                 retrieveCursorDataFromModelFile = retrieveCursorDataFromModelFile,modelReadLocation = modelReadLocation,decoderType = decoderType,writeDataLocationPkl = writeDataLocationPkl,invertXaxis=invertXaxis)
+                 retrieveCursorDataFromModelFile = retrieveCursorDataFromModelFile,modelReadLocation = modelReadLocation,
+                 decoderType = decoderType,writeDataLocationPkl = writeDataLocationPkl,invertXaxis=invertXaxis,
+                 useRotation = useRotation)
 
 
 # FEATURE CONTROL

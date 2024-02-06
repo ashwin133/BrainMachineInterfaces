@@ -28,7 +28,7 @@ class gameStatistics():
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
                  leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
                  readAdjustedRigidBodies,showCursorPredictor, cursorMotionDatastoreLocation,runDecoderInLoop,
-                 retrieveCursorDataFromModelFile,modelReadLocation,decoderType,writeDataLocationPkl,invertXaxis):
+                 retrieveCursorDataFromModelFile,modelReadLocation,decoderType,writeDataLocationPkl,invertXaxis,useRotation):
         self.world = None
         self.calibrationTimeEnd = None
         self.targetStartTime = None
@@ -80,6 +80,7 @@ class gameStatistics():
         self.modelReadLocation = modelReadLocation
         self.decoderType = decoderType
         self.invertXaxis = invertXaxis
+        self.useRotation = useRotation
         
 
 
@@ -287,10 +288,10 @@ class Player(pygame.sprite.Sprite):
         self.modelCoeff = self.model['modelCoeff']
         self.modelIntercept = self.model['modelIntercept']
         self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
-        if self.decoderType == 'A': # A is remove right hand only
+        if self.decoderType in {'A','E'}: # A is remove right hand only
             self.modelIgnoreIdx = 12 # make this more robust after
             self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
-        if self.decoderType == 'B': # B is remove right side
+        if self.decoderType in {'B','F'}: # B is remove right side
             self.modelIgnoreIdx = [9,10,11,12] # make this more robust after # these correspond to right side indexes
             self.correctBodyParts = [0,1,2,3,4,5,6,7,8,24,25,26,27,43,44,45,47,48,49] 
         # TODO: need to also add ranges which should be tuples corresponding to min and max values to normalise model
@@ -315,7 +316,7 @@ class Player(pygame.sprite.Sprite):
         """
         Updates cursor position from keypad
         """
-        print("update is being run")
+        self.debugger.disp(3,"update function is being run",'')
         # updates cursor position to be the curr pos plus the next control 
         if self.readData is not True:
             self.rect.x = self.rect.x + self.movex
@@ -378,7 +379,7 @@ class Player(pygame.sprite.Sprite):
         data = data[readDataVarName]
         if self.simulateSharedMemoryOn:
             self.bodyDataStore = bodyData
-            self.bodyDataStoreIteration = 0
+        self.bodyDataStoreIteration = 0
         self.readDataStore = data
         self.readDataStoreIteration = 0
         self.readData = True
@@ -457,10 +458,19 @@ class Player(pygame.sprite.Sprite):
 
             if self.calibrated is not True:
                 # as game x is typically the body y plane (right) and game y is the body z plane (up) 
-                self.userMaxXValue = max(self.rightHandPos[1],self.userMaxXValue)
-                self.userMaxYValue = max(self.rightHandPos[2],self.userMaxYValue)
-                self.userMinXValue = min(self.rightHandPos[1],self.userMinXValue)
-                self.userMinYValue = min(self.rightHandPos[2],self.userMinYValue)
+                if self.useRotation is not True:
+                    # Min and Max positions come from position of right hand
+                    self.userMaxXValue = max(self.rightHandPos[1],self.userMaxXValue)
+                    self.userMaxYValue = max(self.rightHandPos[2],self.userMaxYValue)
+                    self.userMinXValue = min(self.rightHandPos[1],self.userMinXValue)
+                    self.userMinYValue = min(self.rightHandPos[2],self.userMinYValue)
+                
+                elif self.useRotation is True:
+                    # Min and Max positions come from rotation of right hand
+                    self.userMaxXValue = max(self.rightHandDir[1],self.userMaxXValue)
+                    self.userMaxYValue = max(self.rightHandDir[2],self.userMaxYValue)
+                    self.userMinXValue = min(self.rightHandDir[1],self.userMinXValue)
+                    self.userMinYValue = min(self.rightHandDir[2],self.userMinYValue)
             
             if self.liveDecoding and pygame.time.get_ticks() > self.decoderStartTime:
                 
@@ -494,6 +504,56 @@ class Player(pygame.sprite.Sprite):
                     elif self.decoderType == "D":
                         idxRightHand = 12 * 6
                         tmpArray = tmpRigBodyArray[idxRightHand:idxRightHand+6]
+                    
+                    elif self.decoderType == "E":
+                        idxRightHand = self.modelIgnoreIdx * 6
+                        tmpArray = np.zeros(108)
+                        tmpArray[0:idxRightHand] = tmpRigBodyArray[0:idxRightHand,0]
+                        tmpArray[idxRightHand:] = tmpRigBodyArray[idxRightHand+6:,0]
+                        tmpArray = tmpArray.reshape(18,6)[:,3:].reshape(-1)
+
+                    elif self.decoderType == "F":
+                        # Decode from rotations excluding right side rigid bodies
+
+                        # Find right 
+                        startIndex = self.modelIgnoreIdx[0] * 6
+                        endIndex = self.modelIgnoreIdx[-1] * 6 + 6
+                        tmpArray = np.zeros(108)
+                        tmpArray = tmpRigBodyArray.copy()
+                        tmpArray =   np.delete(tmpArray,slice(startIndex,endIndex,1),0)
+                        tmpArray = tmpArray.reshape(15,6)[:,3:].reshape(-1)
+                    
+                    elif self.decoderType == "G":
+                        # Find index of left hand and only decode from those rotations
+                        idxLeftHand = 8 * 6
+                        tmpArray = tmpRigBodyArray[idxLeftHand:idxLeftHand+6][3:]
+                    
+                    elif self.decoderType == "H":
+                        idxRightHand = 12 * 6
+                        tmpArray = tmpRigBodyArray[idxRightHand:idxRightHand+6][3:]
+                    
+                    elif self.decoderType == "I":
+                    # Find index of left hand and only decode from those rotations
+                        startIndex = 13 * 3
+                        endIndex = 18 * 3 + 3
+                        tmpArray = np.zeros(108)
+                        tmpArray = tmpRigBodyArray.copy()
+                        tmpArray = tmpArray.reshape(19,6)[:,3:].reshape(-1)
+                        tmpArray = tmpArray[startIndex:endIndex]
+                    
+                    elif self.decoderType == "J":
+                    # Find index of Neck and Head and only decode from those rotations
+
+                        # Neck Idx
+                        startIndex = 3 * 3
+                        # Head Idx
+                        endIndex = 4 * 3 + 3
+                        tmpArray = np.zeros(108)
+                        tmpArray = tmpRigBodyArray.copy()
+                        tmpArray = tmpArray.reshape(19,6)[:,3:].reshape(-1)
+                        tmpArray = tmpArray[startIndex:endIndex]
+                    
+
 
                     self.xposDECODE = np.matmul(self.modelCoeff[0].reshape(1,-1),tmpArray.reshape(1,-1).transpose()) + self.modelIntercept[0]
                     self.yposDECODE = np.matmul(self.modelCoeff[1].reshape(1,-1),tmpArray.reshape(1,-1).transpose()) + self.modelIntercept[1]
@@ -514,12 +574,7 @@ class Player(pygame.sprite.Sprite):
                     #print('Pred',pygame.time.get_ticks(),self.xposDECODE,self.yposDECODE)
                 # ignore relevant indexes
                 
-                # control motion using model
-                # for now decoderStartTime should be higher than calibration time
-                #TODO: first multiply rigid body vector by calibration matrix
-                #TODO: resize each rigid body by ranges # self.ranges[i] = (min,max) for ith rigid body dim
-                #TODO: convert rigid bodies to cursor pos
-                #self.cursorPosLive = ...
+
 
 
     def finishCalibrationStage(self):
@@ -539,7 +594,7 @@ class Player(pygame.sprite.Sprite):
     def calcCursorPosFromHandData(self,targetBox):
         #print(self.xRange,self.yRange)
         # feature control
-        rangeControl = True
+        rangeControl = False
         alphaX = 0# this sets how large to artificially extend the control mapping, e.g.
         # setting alphaX to worldX means the users current explored control mapping actually maps from -X to 3X
         alphaY = 0
@@ -653,10 +708,9 @@ class Player(pygame.sprite.Sprite):
                 #     self.rect.y = (self.yposDECODE * self.worldY  - self.offsetY )* 1/self.YrangeFactor 
                 # else:
                 #     
-                pass
-                #self.rect.x = self.xposDECODE * self.worldX 
+                self.rect.x = self.xposDECODE * self.worldX 
                 
-                #self.rect.y = self.yposDECODE * self.worldY 
+                self.rect.y = self.yposDECODE * self.worldY 
                 # self.rect.x = self.xposDECODE * self.worldX 
                 # self.rect.y = self.yposDECODE * self.worldY 
                 # if np.abs(self.rect.x) < 10000 and np.abs(self.rect.y) < 10000:
@@ -668,8 +722,9 @@ class Player(pygame.sprite.Sprite):
             self.debugger.disp(3,'Y pos', self.yposDECODE,frequency = 50)
             return self.checkIfCursorInBox(targetBox)
 
-        elif not self.cursorPredictor:
-            print("Cursor position is being calculated from control movements")
+        elif not self.cursorPredictor and self.useRotation is False:
+            # Calculate cursor position from displacement of right hand movement
+            self.debugger.disp(3,"Cursor position is being calculated from displacement of control movements",'')
 
             normalised_x_val = 1 -  (self.rightHandPos[1] - self.userMinXValue) / self.xRange
             normalised_y_Val = 1 - (self.rightHandPos[2] - self.userMinYValue) / self.yRange
@@ -678,6 +733,16 @@ class Player(pygame.sprite.Sprite):
             self.rect.x = normalised_x_val * self.worldX
             self.rect.y = normalised_y_Val * self.worldY
             
+            return self.checkIfCursorInBox(targetBox)
+        elif not self.cursorPredictor and self.useRotation is True:
+            # Calculate cursor position from rotation of right hand
+            self.debugger.disp(3,"Cursor position is being calculated from rotation of control movements",'',frequency = 100)
+            normalised_x_val = 1 -  (self.rightHandDir[1] - self.userMinXValue) / self.xRange
+            normalised_y_Val = 1 - (self.rightHandDir[2] - self.userMinYValue) / self.yRange
+            #print(normalised_x_val)
+            #print(normalised_y_Val)
+            self.rect.x = normalised_x_val * self.worldX
+            self.rect.y = normalised_y_Val * self.worldY
             return self.checkIfCursorInBox(targetBox)
         else:
             print("Cursor position is being calculated from stored data")
@@ -718,7 +783,7 @@ class Player(pygame.sprite.Sprite):
                 # read data from datastore and increment index
                 rightHandData = self.readDataStore[self.readDataStoreIteration] 
                 self.readDataStoreIteration += 1
-                self.bodyDataStoreIteration += 1
+                #self.bodyDataStoreIteration += 1
 
         else:
             raise('Need to code this in')

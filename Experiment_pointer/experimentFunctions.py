@@ -81,10 +81,10 @@ def configureForTrainingSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLoca
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 150 # 2 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 120 # 2 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
-
+    gameEngine.useRotation = True
     gameEngine.reachedBoxStatus = 0
     gameEngine.reachedBoxLatch = False
 
@@ -152,10 +152,10 @@ def configureForTestSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLocation
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 150 # 2 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 120 # 2 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
-
+    gameEngine.useRotation = True
     gameEngine.reachedBoxStatus = 0
     gameEngine.reachedBoxLatch = False
 
@@ -223,10 +223,10 @@ def configureForDecoder(gameEngine,worldx,worldy,fps,saveLocation,saveLocationPk
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 150 # 3 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 120 # 3 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
-
+    gameEngine.useRotation = True
     gameEngine.reachedBoxStatus = 0
     gameEngine.reachedBoxLatch = False
 
@@ -284,7 +284,7 @@ import sys
 from sklearn.decomposition import PCA
 from sklearn import linear_model
 sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces')
-from lib_streamAndRenderDataWorkflows.config_streaming import renderingBodyParts
+from lib_streamAndRenderDataWorkflows.config_streaming import renderingBodyParts,simpleBodyParts
 
 colorMap =  [
     'red',         # Standard named color
@@ -545,6 +545,105 @@ def fitModelToData(mode,tester,compPca,savePath,colorMap = None,plot = False,DOF
         X_test_linear = rigidBodyVectorTest[:,idxRightHand:idxRightHand+6]
         X_test_ridge = rigidBodyVectorTest[:,idxRightHand:idxRightHand+6]
     
+    elif mode == 'RigidBodiesSetE':
+        # # # angles only, use all non right hand
+        type = 'E'
+        # Find index of right hand on principal skeleton
+        idxRightHand = renderingBodyParts.index('RHand') * 3
+        rigidBodyVectorTraining = rigidBodyVectorTraining.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        rigidBodyVectorTest = rigidBodyVectorTest.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        
+        X_train = np.delete(rigidBodyVectorTraining,slice(idxRightHand,idxRightHand+3,1),1)
+        X_test_linear = np.delete(rigidBodyVectorTest,slice(idxRightHand,idxRightHand+3,1),1)
+        X_test_ridge = np.delete(rigidBodyVectorTest,slice(idxRightHand,idxRightHand+3,1),1)
+        
+    
+    elif mode == 'RigidBodiesSetF':
+        # # # angles only, use all except right side
+        type = 'F'
+
+        # Find index of right hand on principal skeleton
+        idxRightHand = renderingBodyParts.index('RHand') * 3
+
+        # Find index of right shoulder on principal skeleton
+        idxRightShoulder = renderingBodyParts.index('RShoulder') * 3
+
+        # Retrieve all rigid body rotations for all timestamps
+        rigidBodyVectorTraining = rigidBodyVectorTraining.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        rigidBodyVectorTest = rigidBodyVectorTest.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        
+        # Delete rigid bodies on the right side
+        X_train = np.delete(rigidBodyVectorTraining,slice(idxRightShoulder,idxRightHand+3,1),1)
+        X_test_linear = np.delete(rigidBodyVectorTest,slice(idxRightShoulder,idxRightHand+3,1),1)
+        X_test_ridge = np.delete(rigidBodyVectorTest,slice(idxRightShoulder,idxRightHand+3,1),1)
+    
+
+    elif mode == 'RigidBodiesSetG':
+        # # # Angles only: only get the left hand
+        type = 'G'
+        # Find index of left hand in principal rigid bodies
+        idxLeftHand = renderingBodyParts.index('LHand') * 6
+
+        # Extract only the left hand rotations for test and training sets
+        X_train = rigidBodyVectorTraining[:,idxLeftHand+3:idxLeftHand+6]
+        X_test_linear = rigidBodyVectorTest[:,idxLeftHand+3:idxLeftHand+6]
+        X_test_ridge = rigidBodyVectorTest[:,idxLeftHand+3:idxLeftHand+6]
+    
+    elif mode == 'RigidBodiesSetH':
+        # # # only get the right hand
+        type = 'H'
+
+        # Find index of right hand in principal rigid bodies
+        idxRightHand = renderingBodyParts.index('RHand') * 6
+
+        # Extract only right hand rotations for test and training sets
+        X_train = rigidBodyVectorTraining[:,idxRightHand+3:idxRightHand+6]
+        X_test_linear = rigidBodyVectorTest[:,idxRightHand+3:idxRightHand+6]
+        X_test_ridge = rigidBodyVectorTest[:,idxRightHand+3:idxRightHand+6]
+
+    elif mode == 'RigidBodiesSetI':
+        # # # Only use the lower body
+         # # # angles only
+        type = 'I'
+
+        # Find index of left thigh on principal skeleton as this is start of lower bodies
+        idxLeftThigh = renderingBodyParts.index('LThigh') * 3
+
+        # Find index of right foot on principal skeleton as this is end of lower bodies
+        idxRightFoot = renderingBodyParts.index('RFoot') * 3
+        
+
+        # Retrieve all rigid body rotations for all timestamps
+        rigidBodyVectorTraining = rigidBodyVectorTraining.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        rigidBodyVectorTest = rigidBodyVectorTest.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        
+        # Extract lower rigid bodies only
+        X_train = rigidBodyVectorTraining[:,idxLeftThigh:idxRightFoot+3]
+        X_test_linear = rigidBodyVectorTest[:,idxLeftThigh:idxRightFoot+3]
+        X_test_ridge = rigidBodyVectorTest[:,idxLeftThigh:idxRightFoot+3]
+
+    
+    elif mode == 'RigidBodiesSetJ':
+        # # # Only use the upper body ( excludes upper left and right)
+         # # # angles only
+        type = 'J'
+
+        # Find index of neck on principal skeleton as this is start of upper body
+        idxNeck = renderingBodyParts.index('Neck') * 3
+
+        # Find index of head on principal skeleton as this is end of upper body
+        idxHead = renderingBodyParts.index('Head') * 3
+        
+
+        # Retrieve all rigid body rotations for all timestamps
+        rigidBodyVectorTraining = rigidBodyVectorTraining.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        rigidBodyVectorTest = rigidBodyVectorTest.reshape(-1,19,6)[:,:,3:].reshape(-1,19*3)
+        
+        # Extract upper rigid bodies only
+        X_train = rigidBodyVectorTraining[:,idxNeck:idxHead+3]
+        X_test_linear = rigidBodyVectorTest[:,idxNeck:idxHead+3]
+        X_test_ridge = rigidBodyVectorTest[:,idxNeck:idxHead+3]
+
     if tester == 'PCA_linear':
         pca = PCA(n_components=compPca)
         pca.fit(X_train)

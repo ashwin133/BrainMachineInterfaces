@@ -595,7 +595,7 @@ class Player(pygame.sprite.Sprite):
         #print(self.xRange,self.yRange)
         # feature control
         rangeControl = False
-        alphaX = 0# this sets how large to artificially extend the control mapping, e.g.
+        alphaX = 0 # this sets how large to artificially extend the control mapping, e.g.
         # setting alphaX to worldX means the users current explored control mapping actually maps from -X to 3X
         alphaY = 0
 
@@ -756,6 +756,9 @@ class Player(pygame.sprite.Sprite):
 
         print('Before we start, the calibration stage must be undertaken')
         print('Face upright and standing towards the computer and point the right hand forward')
+        # confirm 
+        keyPressConfirm()
+        time.sleep(1)
         print('Calibration will start in 5')
         time.sleep(1)
         print('4')
@@ -855,3 +858,12 @@ class Player(pygame.sprite.Sprite):
     
 
             
+def keyPressConfirm():
+    """
+    Allows user to proceed after key press
+    """
+    y = ""
+    while y != " ":
+        y = input("Type proceed when ready to initiate next stage \n")
+        if y != " ":
+            print("Invalid input detected")

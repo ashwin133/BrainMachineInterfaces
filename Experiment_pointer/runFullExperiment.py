@@ -62,7 +62,7 @@ if runPostExperimentalAnalysisOnly == False:
 
     # check if data saved an inform user if game has not saved
     verifySaved1 = verifyGameSaveData(trainingGameSaveLocation1,trainingGameSaveLocationPkl1)
-    informUserGameSave(verifySaved=verifySaved1 )
+    informUserGameSave(verifySaved=verifySaved1)
 
     # Delete data after saved
     del player,targetBox,gameEngine_trial1, clock, player_list,debugger,cursorPredictor 

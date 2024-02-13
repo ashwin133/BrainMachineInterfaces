@@ -307,6 +307,7 @@ colorMap =  [
     '#6495ED'      # Cornflower Blue (hexadecimal)
 ]
 
+
 def calcThetha(y_curr,y_prev,x_curr,x_prev):
     dY = y_curr - y_prev
     dX = x_curr - x_prev

@@ -5,6 +5,7 @@ Contains some helper functions to post process the raw data so models can be app
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = False,scalefeaturesAndOutputs = True,ignoreCalibration = False):
     """
@@ -50,9 +51,10 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
         if ignoreCalibration == False:
             gameEngine = data['gameEngineLocation']
             calMatrix = gameEngine.fullCalibrationMatrix
-        else:
-            pass
+        
 
+    # Fetch target Box positions
+    targetBoxLocs = data['targetBoxLocs']
 
 
     # data starts as soon as cursor moves on screen
@@ -82,16 +84,43 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
     # Calculate cursor velocities 
     cursorVelocities = np.gradient(cursorMotion[:,1:],cursorMotion[:,0],axis=0)
 
+    # Zero any erroneous values (values wildly above reasonable limits in both columns)
+    cursorMotion[:,1] = [cursorMotion[a,1] if abs(cursorMotion[a,1]) < 3000 else 0 for a in range(cursorMotion[:,1].shape[0])]
+    cursorMotion[:,2] = [cursorMotion[a,2] if abs(cursorMotion[a,2]) < 3000 else 0 for a in range(cursorMotion[:,2].shape[0])]
+
     # now get times of when target appeared to when target was hit
     targetBoxHitTimes = np.array(data['targetBoxHitTimes'])
     targetBoxAppearTimes = np.array(data['targetBoxAppearTimes'])
     # get the relevant elements of targetBoxAppearTimes
+
+    # Find successful target acquisitions
+    successfulAcquires = [a != -1 for a in targetBoxHitTimes  ]
+
+    # Now get rid of unsuccessful indicators, replace with a time of 10s after target
+    targetBoxHitTimes = [targetBoxHitTimes[i] if targetBoxHitTimes[i]  != -1 else targetBoxAppearTimes[i] + 10000 for i in range(len(targetBoxHitTimes)) ]
+
+    # Delete zero entries of box hit and appear times
     zeroIdx = np.where(targetBoxAppearTimes == 0)[0][0]
     targetBoxAppearTimes = targetBoxAppearTimes[0:zeroIdx]
+
+    # Identify the index of timestamps for target appearing and hit
     goCueIdxes = [np.argmin(np.abs(cursorMotion[:,0] - a)) for a in targetBoxAppearTimes]
     targetAquiredIdxes = [np.argmin(np.abs(cursorMotion[:,0] - a)) for a in targetBoxHitTimes]
 
-    cursorMotion_noTimestamp = cursorMotion[:,1:] # remove timestamp column
+    # Remove timestamp column of cursor motion
+    cursorMotion_noTimestamp = cursorMotion[:,1:] 
+
+    # Delete zero entries of target box locs
+    targetBoxLocs = targetBoxLocs[0:len(goCueIdxes),:]
+
+    # Normalise range of target boxes
+    # boxWidth = 60
+    # targetBoxLocs[:,0] += boxWidth // 2
+    # targetBoxLocs[:,1] -= boxWidth // 2
+
+    targetBoxLocs[:,0] /= 1100
+    targetBoxLocs[:,1] /= 800
+
     timeStamps = cursorMotion[:,0]
 
     # Delete all redundant rigid bodies
@@ -129,7 +158,7 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
 
 
     if returnAsDict is not True:
-        return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,np.array(goCueIdxes),np.array(targetAquiredIdxes), timeStamps,minDOF,maxDOF
+        return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,np.array(goCueIdxes),np.array(targetAquiredIdxes), timeStamps,minDOF,maxDOF, successfulAcquires, targetBoxLocs
     else:
         returnDict = {
             'rigidBodyData': rigidBodyData,
@@ -139,7 +168,9 @@ def processTrialData(dataLocation,calLocation,DOFOffset = 0.03,returnAsDict = Fa
             'targetReached': np.array(targetAquiredIdxes),
             'timestamps': timeStamps,
             'minDOF': minDOF,
-            'maxDOF': maxDOF
+            'maxDOF': maxDOF,
+            'successfulAcquires': successfulAcquires,
+            'targetBoxLocs': targetBoxLocs
         }
         return returnDict
     
@@ -164,16 +195,16 @@ def readIndividualTargetMovements(processedDataDict):
         'cursorVelData': [],
         'timestamps': []
     }
-    for i in range(0,len(processedDataDict['goCues'])-1):
+    for i in range(len(processedDataDict['goCues']) - 1):
         startTime = processedDataDict['timestamps'][processedDataDict['goCues'][i]]
         returnDict['rigidBodyData'].append(processedDataDict['rigidBodyData'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
         returnDict['cursorPosData'].append(processedDataDict['cursorPos'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
         returnDict['cursorVelData'].append(processedDataDict['cursorVel'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i],:].transpose())
         returnDict['timestamps'].append(processedDataDict['timestamps'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i]] - startTime)    
-
+        
     return returnDict
 
-def plotVar(var1,list_ = False,invertY = False,npArray = False,plotFrom = 0,plotTo = -1,label = "",var1Label = "true"):
+def plotVar(var1,list_ = False,invertY = False,npArray = False,plotFrom = 0,plotTo = -1,label = "",var1Label = "true",points = False):
     colorMap =  [
     'red',         # Standard named color
     '#FFA07A',     # Light Salmon (hexadecimal)
@@ -193,8 +224,20 @@ def plotVar(var1,list_ = False,invertY = False,npArray = False,plotFrom = 0,plot
     '#D2691E',     # Chocolate (hexadecimal)
     'pink',        # Standard named color
     '#6495ED'      # Cornflower Blue (hexadecimal)
-]
-    if list_:
+
+    ]
+
+    if points:
+        # Plot all points from a list of 2d points
+
+        for idx,var in enumerate(var1):
+            if idx == 0:
+                # For label
+                plt.plot(var[0],var[1],marker = 'X',markersize = 10,color = colorMap[idx%len(colorMap)],label = "Target Location")
+            else:
+                plt.plot(var[0],var[1],marker = 'X',markersize = 10,color = colorMap[idx%len(colorMap)])
+
+    elif list_:
         for idx,var in enumerate(var1):
             if npArray == False:
                 var = np.asarray(var).transpose()

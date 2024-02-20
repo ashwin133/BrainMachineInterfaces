@@ -33,6 +33,10 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
                         
                         gameEngine.targetStartTime = player.finishCalibrationStage()
 
+                        # Initialise ring
+                        ring = Ring(center=(targetBox.leftCornerXBoxLoc + gameEngine.boxWidth // 2, targetBox.leftCornerYBoxLoc + gameEngine.boxHeight // 2), radius=20, color=gameEngine.colours['WHITE'], timeToEmpty=gameEngine.timeLimit // 1000,fps = gameEngine.fps,startOnTime = gameEngine.targetStartTime )
+                        player.ring = ring
+
                         gameEngine.calibrated = True
                     else:
                         gameEngine.reachedBoxStatus = player.calcCursorPosFromHandData(targetBox)
@@ -102,42 +106,106 @@ def runGame(gameEngine,player,debugger,targetBox,player_list,cursorPredictor = N
             return endProgram(gameEngine,player,targetBox,debugger)
 
         # TRIGGERS WHEN CURSOR REACHES TARGET
-        if gameEngine.reachedBoxStatus == 1 and gameEngine.reachedBoxLatch == 0:
-            debugger.disp(2,'Hit Box','')
+        if (gameEngine.reachedBoxStatus == 1 or gameEngine.reachedBoxStatus == "VOID") and gameEngine.reachedBoxLatch == 0:
+            debugger.disp(2, "Target removed", gameEngine.reachedBoxStatus)
             gameEngine.timeToReach = pygame.time.get_ticks()
-            gameEngine.boxHitTimes.append(gameEngine.timeToReach)
-            targetBox.boxColor = gameEngine.colours['GREEN']
+            if gameEngine.reachedBoxStatus == "VOID":
+                gameEngine.boxHitTimes.append(-1)
+                targetBox.boxColor = gameEngine.colours['BLACK']
+                gameEngine.holdLatch = True
+                player.ring.freeze = True
+                player.ring.number = 0
+                player.ring.end_angle = 0
+            else:
+                debugger.disp(2,'Hit Box','')
+                gameEngine.boxHitTimes.append(gameEngine.timeToReach)
+                targetBox.boxColor = gameEngine.colours['ORANGE']
+                player.ring.freeze = True
+                
+                gameEngine.scoreMultiplier = 0
             gameEngine.reachedBoxLatch = 1
+            
 
 
+        if gameEngine.timeToReach is not None and gameEngine.holdLatch == False:
+            # Reached the target and testing if it can remain in target
+            gameEngine.scoreMultiplier += gameEngine.incrementalScoreMultiplier
 
+            # Alter score multiplier in ring
+            player.ring.scoreMultiplier = gameEngine.scoreMultiplier
+
+            # Check if cursor in target
+            cursorInTarget = pygame.Rect(targetBox.dimensions).colliderect(player.rect)
+            if cursorInTarget and gameEngine.scoreMultiplier < gameEngine.maxScoreMultiplier:
+                print("Cursor in target")
+            else:
+                print("Score Multiplier:", gameEngine.scoreMultiplier)
+                targetBox.boxColor = gameEngine.colours['GREEN']
+                print("Cursor has left target")
+                gameEngine.holdLatch = True
+                gameEngine.timeToReach = pygame.time.get_ticks()
+
+                
+                # Calculate player score
+                player.score += int(player.ring.number * gameEngine.scoreMultiplier// 1)
+                player.scoreUpdates.append(player.score)
+                player.scoreUpdateTimes.append(pygame.time.get_ticks())
+                gameEngine.red_bar.addLine(player.scoreUpdates[-1] - player.scoreUpdates[-2])
+
+
+            # If cursor not in target turn latch off
 
         # i.e. RESETS THE TARGET 3 SECONDS AFTER USER REACHES
         
-        if gameEngine.timeToReach is not None and pygame.time.get_ticks() > gameEngine.timeToReach + 3000:
+        if gameEngine.timeToReach is not None and pygame.time.get_ticks() > gameEngine.timeToReach + 3000 and gameEngine.holdLatch == True:
             # reset timeToReach to None as this is what shows the user has reached the target
+            debugger.disp(2, "Reset executed", gameEngine.reachedBoxStatus)
+            gameEngine.reachedBoxStatus = None
             gameEngine.timeToReach = None
             # respawn the box
-            targetBox.resetBoxLocation(player)
+            player = targetBox.resetBoxLocation(player,gameEngine)
             gameEngine.reachedBoxLatch = 0
             # update the dimensions of the new box so the cursor knows when it has reached the box
-            player.reset(targetBox)
+            player = player.reset(targetBox)
+
+            gameEngine.holdLatch = False
+            
+        
+        
+        # Draw the world
+        gameEngine.world.fill(gameEngine.colours['BLUE'])
+
+        # Draw the red bar
+        gameEngine.red_bar.update()
+        gameEngine.red_bar.draw(gameEngine.world)
+
+        debugger.disp(4,'Player X pos',player_list.sprites()[0],frequency = 20)
 
         # draw the cursor
-        gameEngine.world.fill(gameEngine.colours['BLUE'])
-        debugger.disp(4,'Player X pos',player_list.sprites()[0],frequency = 20)
         player_list.draw(gameEngine.world) # draw player
 
         
         gameEngine.world.blit(text_surface_x, (0.93 * gameEngine.worldx,0.9* gameEngine.worldy ))
         gameEngine.world.blit(text_surface_y, (0.97 * gameEngine.worldx,0.9* gameEngine.worldy ))
+
+        # Display player score
+        playerScoreSurface = player.font.render("Score: " + str(player.score), True, (255, 255, 255))  # White color
+        gameEngine.world.blit(playerScoreSurface, (0.8 * gameEngine.worldx,0.1* gameEngine.worldy ))
+
         if pygame.time.get_ticks() > gameEngine.targetStartTime:
             # draw box
             pygame.draw.rect(gameEngine.world, targetBox.boxColor, pygame.Rect(targetBox.dimensions)) 
 
 
-        # advance clock and display
+        # Draw the ring if it is there
+        if hasattr(player,"ring"):
+            player.ring.update()
+            player.ring.draw(gameEngine.world)
 
+        
+
+        # advance clock and display
+    
         
         pygame.display.update()
         endTime = time.perf_counter()

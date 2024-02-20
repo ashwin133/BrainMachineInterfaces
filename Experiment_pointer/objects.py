@@ -10,6 +10,7 @@ import numpy as np
 from multiprocessing import shared_memory
 import time
 import sys 
+import math
 
 from lib_streamAndRenderDataWorkflows.config_streaming import renderingBodyParts,simpleBodyParts
 
@@ -28,10 +29,12 @@ class gameStatistics():
                  boxHitTimes,enforce,offline,positions,processedRigidBodyParts,
                  leftCornerXBoxLoc,leftCornerYBoxLoc,boxWidth,boxHeight,testMode,readRigidBodies,
                  readAdjustedRigidBodies,showCursorPredictor, cursorMotionDatastoreLocation,runDecoderInLoop,
-                 retrieveCursorDataFromModelFile,modelReadLocation,decoderType,writeDataLocationPkl,invertXaxis,useRotation):
+                 retrieveCursorDataFromModelFile,modelReadLocation,decoderType,writeDataLocationPkl,invertXaxis,useRotation, 
+                 timeLimitTargets, maxScoreMultiplier,timeToReachMaxScoreMultiplier, timeLimit):
         self.world = None
         self.calibrationTimeEnd = None
         self.targetStartTime = None
+        self.targetPlaceTime = None
         self.programRunTime = None
         self.steps = None
         self.noTimeStamps = None
@@ -81,8 +84,52 @@ class gameStatistics():
         self.decoderType = decoderType
         self.invertXaxis = invertXaxis
         self.useRotation = useRotation
+        self.timeLimitTargets = timeLimitTargets
+        self.holdLatch = False
+        self.maxScoreMultiplier = maxScoreMultiplier
+        self.timeToReachMaxScoreMultiplier = timeToReachMaxScoreMultiplier
+        self.timeLimit = timeLimit
         
+class RedBar:
+    def __init__(self, screen_width, bar_height, depletion_time,red,black,fps,maxScore = 4000):
+        self.startTime = pygame.time.get_ticks()
+        self.screen_width = screen_width
+        self.bar_height = bar_height
+        self.depletion_time = depletion_time  # Total time to deplete the bar
+        print("Game End time" ,self.depletion_time)
+        self.current_width = 0  # Current width starts as the full screen width
+        self.depletion_rate = self.screen_width / self.depletion_time  # Pixels per frame to deplete
+        self.red = red
+        self.dt = 1 / fps
+        self.black = black
+        self.linePositions = []
+        self.maxScore = maxScore
+        self.colors = []
+    def draw(self, surface):
+        # Draw the red bar with the current width
+        pygame.draw.rect(surface, self.red, (0, 0, self.current_width, self.bar_height))
 
+        for i,pos in enumerate(self.linePositions):
+            pygame.draw.line(surface, self.colors[i], (pos,0), (pos,self.bar_height),2)
+    def update(self):
+        # Decrease the width of the bar based on the depletion rate and time passed
+        currTime = pygame.time.get_ticks()
+        
+        self.current_width = (currTime/1000  / self.depletion_time) * self.screen_width
+        if self.current_width < 0:
+            self.current_width = 0  # Ensure the width doesn't become negative
+
+
+    def addLine(self,score):
+        # Look at current time and convert to fraction of total time
+        currTime = pygame.time.get_ticks()
+        pos = (currTime/1000  / self.depletion_time )* self.screen_width
+        color = 255 -  (score / 4000) * 255
+        color = (color,color,color)
+
+        # Append to current list
+        self.linePositions.append(pos)
+        self.colors.append(color)
 
 class Debugger():
     """
@@ -129,6 +176,7 @@ class Box():
         self.debugger = debugger
         self.latencyTestActivated = False
         
+        
     
     def prepareForDataWrite(self,boxLocs):
         # tell object program is writing data
@@ -164,10 +212,11 @@ class Box():
     
 
 
-    def resetBoxLocation(self,player,resetColor = None):
+    def resetBoxLocation(self,player,gameEngine,resetColor = None):
         """
         changes location of box and sets it to reset color
         """
+        player.targetPlaceTime = pygame.time.get_ticks()
         if resetColor == None:
             self.boxColor = self.resetColor
         else:
@@ -198,10 +247,96 @@ class Box():
             self.leftCornerYBoxLoc = self.readDatastore[self.readDataStoreIteration,1]
             self.readDataStoreIteration += 1
         #self.debugger.disp(3,'all box dims',self.readDatastore)
-       
+            
+        
         self.dimensions = (self.leftCornerXBoxLoc, self.leftCornerYBoxLoc, self.boxWidth, self.boxHeight)
+
+        # Draw the ring inside the target
+        del player.ring
+        ring = Ring(center=(self.leftCornerXBoxLoc + gameEngine.boxWidth // 2, self.leftCornerYBoxLoc + gameEngine.boxHeight // 2), radius=20, color=gameEngine.colours['WHITE'], timeToEmpty=gameEngine.timeLimit // 1000,fps = gameEngine.fps)
+        player.ring = ring
         #self.debugger.disp(3,'actual box dimensions',self.dimensions)
         #self.debugger.disp(3,'theoretical box dimensions',self.readDatastore[self.readDataStoreIteration-1])
+        return player
+
+class Ring():
+    """
+    Draws a ring in the box that empties over time
+    """
+    def __init__(self, center, radius, color, timeToEmpty,fps,startOnTime = None):
+        self.center = center
+        self.radius = radius
+        self.color = color
+        self.start_angle = 0  # Start angle in radians
+        self.end_angle = 2 * math.pi  # End angle in radians, a full circle initially
+        self.angle_decrease_rate = self.end_angle / (fps*timeToEmpty)  # How fast the shaded area decreases
+
+        # To assess how fine tuned control is
+        self.scoreMultiplier = 1
+        
+        
+        # Initialize the font module
+        pygame.font.init()  
+        self.font_size = 24
+        self.font = pygame.font.SysFont(None, self.font_size)
+
+        # For rendering number below
+        self.number = 1000  # Starting number
+        self.start_number = 1000  # Store the initial number to calculate the decrease rate
+
+        # Freeze when tapped
+        self.freeze = False
+
+        self.score   = self.number
+
+        # Start at correct time if needed
+        self.startOnTime = startOnTime
+
+    def draw(self, surface):
+
+        if self.startOnTime == None or pygame.time.get_ticks() > self.startOnTime:
+            # Thickness of the ring
+
+            if self.end_angle != 0:
+                thickness = 10  # You can adjust this value to make the ring thicker or thinner
+
+                # Draw multiple concentric arcs to simulate thickness
+                for i in range(thickness):
+                    # Calculate the radius offset for the current arc
+                    radius_offset = i - thickness // 2
+
+                    # Define the bounding rectangle for the current arc
+                    rect = (self.center[0] - self.radius - radius_offset, 
+                            self.center[1] - self.radius - radius_offset, 
+                            2 * (self.radius + radius_offset), 
+                            2 * (self.radius + radius_offset))
+
+                    # Draw the arc
+                    pygame.draw.arc(surface, self.color, rect, self.start_angle, self.end_angle, 1)  # Use 1 for the line width of individual arcs
+
+
+            # Calculate the score
+            self.score = self.number * self.scoreMultiplier
+
+            number_surf = self.font.render("+" + str(int(self.score)), True, self.color)
+            number_rect = number_surf.get_rect(center=(self.center[0], self.center[1] + self.radius + 20))
+            surface.blit(number_surf, number_rect)
+
+    def update(self):
+        # Decrease the end angle to reduce the shaded area
+        if self.startOnTime == None or pygame.time.get_ticks() > self.startOnTime:
+            if not self.freeze:
+
+                self.end_angle -= self.angle_decrease_rate
+
+                # For displaying number
+                angle_progress = (2 * math.pi - (self.end_angle - self.start_angle)) / (2 * math.pi)
+                self.number = self.start_number * (1 - angle_progress)
+                
+                if self.end_angle < self.start_angle:
+                    self.end_angle = self.start_angle + 0.01 # Ensure the end angle doesn't go below the start angle
+                    self.number = 10
+
 
 
 class Player(pygame.sprite.Sprite):
@@ -209,7 +344,7 @@ class Player(pygame.sprite.Sprite):
     Spawn a cursor
     """
 
-    def __init__(self,targetBox,colours, targetStartTime,worldX,worldY,debugger,cursorPredictor = False,predictorInformation = None):
+    def __init__(self,targetBox,colours, targetStartTime,worldX,worldY,debugger,cursorPredictor = False,predictorInformation = None,timeLimitTargets = False,timeLimit = 10000):
         pygame.sprite.Sprite.__init__(self)
         self.images = []
         # pass debugger
@@ -258,6 +393,9 @@ class Player(pygame.sprite.Sprite):
         self.writeData = False
         self.simulateSharedMemoryOn = False
         self.readAdjustedRigidBodies = False
+        self.timeLimitTargets = timeLimitTargets
+        if self.timeLimitTargets:
+            self.timeLimit = timeLimit
 
         font_size = 24
         self.font = pygame.font.SysFont(None, font_size)
@@ -273,6 +411,7 @@ class Player(pygame.sprite.Sprite):
 
         # set the time at which to spawn the first target
         self.targetStartTime = targetStartTime
+        self.targetPlaceTime = targetStartTime
 
         # pass all necessary colours
         self.colours = colours
@@ -316,7 +455,7 @@ class Player(pygame.sprite.Sprite):
         """
         Updates cursor position from keypad
         """
-        self.debugger.disp(3,"update function is being run",'')
+        self.debugger.disp(4,"update function is being run",'')
         # updates cursor position to be the curr pos plus the next control 
         if self.readData is not True:
             self.rect.x = self.rect.x + self.movex
@@ -358,6 +497,11 @@ class Player(pygame.sprite.Sprite):
             self.cursorDatastoreIndex += 1
         # check if target has spawned
             
+        # Delete if spawned for 10 seconds
+
+        if self.timeLimitTargets and pygame.time.get_ticks() + 200 > self.targetPlaceTime + self.timeLimit:
+            return "VOID"
+
         if pygame.time.get_ticks() > self.targetStartTime: # if target has spawned
             # check if the cursor is in the target area
 
@@ -584,6 +728,7 @@ class Player(pygame.sprite.Sprite):
         self.yRange = self.userMaxYValue - self.userMinYValue
         self.calibrated = True
         self.targetStartTime = pygame.time.get_ticks() + 3000
+        self.targetPlaceTime = pygame.time.get_ticks() + 3000
         # add target appear time to array of target appear times
         if self.datastore is not None:
             self.targetAppearTimes[self.targetIndex] = self.targetStartTime
@@ -594,7 +739,7 @@ class Player(pygame.sprite.Sprite):
     def calcCursorPosFromHandData(self,targetBox):
         #print(self.xRange,self.yRange)
         # feature control
-        rangeControl = False
+        rangeControl = True
         alphaX = 0 # this sets how large to artificially extend the control mapping, e.g.
         # setting alphaX to worldX means the users current explored control mapping actually maps from -X to 3X
         alphaY = 0
@@ -626,37 +771,22 @@ class Player(pygame.sprite.Sprite):
                 print(diffX,diffY)
 
                 # Rate limiter
-                if abs(diffX) > 50:
+                if abs(diffX) > 1000:
                     # rate being limited
-                    xPos = self.xPosPrev +  50 * (diffX / abs(diffX))
+                    xPos = self.xPosPrev +  1000 * (diffX / abs(diffX))
                 else:
                     pass
                 
-                if abs(diffY) > 50:
+                if abs(diffY) > 1000:
                     # rate being limited
-                    yPos = self.yPosPrev +  50 * (diffY/abs(diffY))
-                else:
-                    pass
+                    yPos = self.yPosPrev +  1000 * (diffY/abs(diffY))
+                
 
                 
                 print('rawPos',xPos,yPos)
                 
 
-                if pygame.time.get_ticks() > self.decoderStartTime + 3000:
-                    # After a short delay build up a range of min and max x,y values
-                    if xPos > 1000:
-                        print("debug") # There is a problem with the model being unstable 
-                    self.maxX = max(self.maxX,xPos)
-                    self.minX = min(self.minX, xPos)
-                    self.maxY = max(self.maxY,yPos)
-                    self.minY = min(self.minY, yPos)
-                    self.xList.append(xPos)
-                    self.yList.append(yPos)
-
-                    # FOR DEBUGGING PURPOSES CAN READ OUT MIN MAX VALUES
-                    print("xmaxmin:", self.maxX, self.minX)
-                    print("ymaxmin:", self.maxY, self.minY)
-                    # print("X pos decode", self.xposDECODE * self.worldX)
+                
                 
                 if pygame.time.get_ticks() > self.decoderStartTime + 8000:
                     # After the above functionality has had sufficient time, start to calculate the resizing parameters
@@ -682,6 +812,26 @@ class Player(pygame.sprite.Sprite):
                     xPos = xPos * grad_x + intercept_x
                     yPos = yPos * grad_y + intercept_y
                     print("Actual Pos:",xPos,yPos)
+                    self.xPosPrev = xPos
+                    self.yPosPrev = yPos
+                    self.rect.x = xPos
+                    self.rect.y = yPos
+
+            elif pygame.time.get_ticks() > self.decoderStartTime + 3000:
+                    # After a short delay build up a range of min and max x,y values
+                    if xPos > 1000:
+                        print("debug") # There is a problem with the model being unstable 
+                    self.maxX = max(self.maxX,xPos)
+                    self.minX = min(self.minX, xPos)
+                    self.maxY = max(self.maxY,yPos)
+                    self.minY = min(self.minY, yPos)
+                    self.xList.append(xPos)
+                    self.yList.append(yPos)
+
+                    # FOR DEBUGGING PURPOSES CAN READ OUT MIN MAX VALUES
+                    print("xmaxmin:", self.maxX, self.minX)
+                    print("ymaxmin:", self.maxY, self.minY)
+                    # print("X pos decode", self.xposDECODE * self.worldX)
                 
             else:
 
@@ -851,10 +1001,12 @@ class Player(pygame.sprite.Sprite):
         self.targetBoxYmin = targetBox.leftCornerYBoxLoc
         self.targetBoxYmax = targetBox.leftCornerYBoxLoc + targetBox.boxHeight
         self.boxColor = targetBox.boxColor
+        self.targetPlaceTime = pygame.time.get_ticks()
         # add time of target appearing so it can be seen
         if self.datastore is not None:
             self.targetAppearTimes[self.targetIndex] = pygame.time.get_ticks()
             self.targetIndex += 1
+        return self
     
 
             
@@ -864,6 +1016,6 @@ def keyPressConfirm():
     """
     y = ""
     while y != " ":
-        y = input("Type proceed when ready to initiate next stage \n")
+        y = input("Type spacebar and enter when ready to initiate next stage \n")
         if y != " ":
             print("Invalid input detected")

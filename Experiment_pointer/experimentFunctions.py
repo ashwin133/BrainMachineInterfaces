@@ -9,6 +9,11 @@ import os
 import sys
 import pickle
 
+import nbformat
+from nbconvert.preprocessors import ExecutePreprocessor
+from nbconvert import NotebookExporter
+
+
 def initiateUserConfirmToProceed(forBreak = False):
     """
     Prompts user to confirm that shared memory is being streamed prior to 
@@ -81,7 +86,7 @@ def configureForTrainingSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLoca
     gameEngine.cursorMotionDatastoreLocation = None
     gameEngine.gameEngineLocation = 'GameEngine'
     #time to run program
-    gameEngine.timeProgram = 120 # 2 minutes for each training session ( will have 4 sessions)
+    gameEngine.timeProgram = 150 # 2.5 minutes for each training session ( will have 4 sessions)
     gameEngine.testMode = False
 
     gameEngine.useRotation = True
@@ -98,6 +103,15 @@ def configureForTrainingSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLoca
     gameEngine.enforce = True
     gameEngine.offline = True
     gameEngine.positions = True
+    gameEngine.timeLimitTargets = True
+
+    gameEngine.maxScoreMultiplier = 3
+    gameEngine.timeToReachMaxScoreMultiplier = 1
+
+    gameEngine.timeLimitTargets = True
+
+    # Time to hit targets
+    gameEngine.timeLimit = 1500
 
     return gameEngine
 
@@ -169,6 +183,7 @@ def configureForTestSetup(gameEngine,worldx,worldy,fps,saveLocation,saveLocation
     gameEngine.enforce = True
     gameEngine.offline = True
     gameEngine.positions = True
+    gameEngine.timeLimitTargets = True
 
     return gameEngine
 
@@ -240,6 +255,7 @@ def configureForDecoder(gameEngine,worldx,worldy,fps,saveLocation,saveLocationPk
     gameEngine.enforce = True
     gameEngine.offline = True
     gameEngine.positions = True
+    gameEngine.timeLimitTargets = True
 
     return gameEngine
 
@@ -411,12 +427,18 @@ def processTrialData(dataLocation,DOFOffset = 0.03):
     @param minDOF: minimum values for each DOF before scaling
     @param maxDOF: maximum values for each DOF before scaling
     """
+    print(os.getcwd())
     try:
         data = np.load('../' + dataLocation + ".npz") # 
 
     except FileNotFoundError:
-        data = np.load(dataLocation + ".npz")
-
+        try:
+            data = np.load(dataLocation + ".npz")
+        except FileNotFoundError:
+            dataLocation = dataLocation.replace("Experiment_pointer","..")
+            
+            data = np.load(dataLocation + ".npz")
+        
     with open(dataLocation + ".pkl",'rb') as file:
         gameEngine,player = pickle.load(file)
 
@@ -498,7 +520,10 @@ def processTrialData(dataLocation,DOFOffset = 0.03):
     
     return rigidBodyData, cursorMotion_noTimestamp,cursorVelocities,goCueIdxes,targetAquiredIdxes, timeStamps,minDOF,maxDOF,cursorExp
 
-def fitModelToData(mode,tester,compPca,savePath,colorMap = None,plot = False,DOFOffset = 0.03,ignoreTargetMotionTimesLessThan = 600):
+def fitModelToData(mode,tester,compPca,savePath,colorMap = None,plot = False,DOFOffset = 0.03,ignoreTargetMotionTimesLessThan = 600,analysis = False):
+    if analysis:
+        path = "/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces/Experiment_pointer/DataAnalysis"
+        os.chdir(path)
     rigidBodies1, cursorPos1,cursorVel1,goCues1,targetHits1,timeStamps1, minDof1,maxDof1,c = processTrialData(savePath + "_test",DOFOffset)# make this test 
     rigidBodies2, cursorPos2,cursorVel2,goCues2,targetHits2,timeStamps2, minDof2,maxDof2,d = processTrialData(savePath + "_training1",DOFOffset)
     rigidBodies3, cursorPos3,cursorVel3,goCues3,targetHits3,timeStamps3, minDof3,maxDof3,e = processTrialData(savePath + "_training2",DOFOffset)
@@ -791,3 +816,29 @@ def readIndividualTargetMovements(processedDataDict):
         returnDict['timestamps'].append(processedDataDict['timestamps'][processedDataDict['goCues'][i]:processedDataDict['targetReached'][i]] - startTime)    
 
     return returnDict
+
+
+
+def analyseNotebook(notebookInputPath, notebookOutputPath):
+
+    
+
+    # Load the notebook
+    print("Opening Notebook ...")
+    with open(notebookInputPath) as f:
+        nb = nbformat.read(f, as_version=4)
+
+    # Set up the ExecutePreprocessor
+    ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+
+    # Execute the notebook
+    print("Executing Notebook ...")
+    ep.preprocess(nb, {'metadata': {'path': './'}})  # Specify the path for any relative paths in the notebook
+
+    # Save the executed notebook
+    exporter = NotebookExporter()
+    body, _ = exporter.from_notebook_node(nb)
+
+    print("Exporting Notebook ...")
+    with open(notebookOutputPath, 'w') as f:
+        f.write(body)

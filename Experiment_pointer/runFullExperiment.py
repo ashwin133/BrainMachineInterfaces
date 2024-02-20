@@ -28,376 +28,432 @@ fps = 60
 
 # Set this True if data has already been gathered from the experiment 
 # and only data analysis needs to be performed
-runPostExperimentalAnalysisOnly = True
+runPostExperimentalAnalysisOnly = False
 
-saveDirectory = "Experiment_pointer/PointerExperimentData/Ashwin_27_01"
-saveGameLocation = saveDirectory + "/Ash_27_01_15_39" # must have format of "Name_dd_mm__hh_mm_metadata" with no file extension
-
-# Create the working directory
-working_directory_path = os.path.join(os.getcwd(), saveDirectory)
-
-# Check if directory already exists
-if not os.path.exists(working_directory_path):
-    # Make the directory 
-    os.makedirs(working_directory_path)
+saveDirectory = "Experiment_pointer/PointerExperimentData/Ashwin_16_02"
+saveGameLocation = saveDirectory + "/Ashwin_16_02__10_14" # must have format of "Name_dd_mm__hh_mm_metadata" with no file extension
 
 
 
 
-if runPostExperimentalAnalysisOnly == False:
-
-#     # --- Phase 1: 4 training trials, each 3 minutes ---
-    # ---- TRAINING TRIAL 1
-    print("--- RUNNING TRAINING TRIAL 1 --- DURATION: 2 MINUTES --- \n")
-
-    # Set Game 1 save Locations
-    trainingGameSaveLocation1 = saveGameLocation + "_training1.npz"
-    trainingGameSaveLocationPkl1 = saveGameLocation + "_training1.pkl"
-
-    initiateUserConfirmToProceed()
-    gameEngine_trial1 = gameEngine
-    gameEngine_trial1 = configureForTrainingSetup(gameEngine=gameEngine_trial1,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation1,saveLocationPkl=trainingGameSaveLocationPkl1)
-    player,targetBox,gameEngine_trial1, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial1)
-    runGame(gameEngine=gameEngine_trial1, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-    # check if data saved an inform user if game has not saved
-    verifySaved1 = verifyGameSaveData(trainingGameSaveLocation1,trainingGameSaveLocationPkl1)
-    informUserGameSave(verifySaved=verifySaved1)
-
-    # Delete data after saved
-    del player,targetBox,gameEngine_trial1, clock, player_list,debugger,cursorPredictor 
-
-    initiateUserConfirmToProceed(forBreak=True)
-
-    # ---- TRAINING TRIAL 2
-    print("--- RUNNING TRAINING TRIAL 2 --- DURATION: 2 MINUTES --- \n")
-
-    # Set Game 2 save Locations
-    trainingGameSaveLocation2 = saveGameLocation + "_training2.npz"
-    trainingGameSaveLocationPkl2 = saveGameLocation + "_training2.pkl"
-
-    initiateUserConfirmToProceed()
-    gameEngine_trial2 = gameEngine
-    gameEngine_trial2 = configureForTrainingSetup(gameEngine=gameEngine_trial2,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation2,saveLocationPkl=trainingGameSaveLocationPkl2)
-    player,targetBox,gameEngine_trial2, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial2)
-    runGame(gameEngine=gameEngine_trial2, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-    # check if data saved an inform user if game has not saved
-    verifySaved2 = verifyGameSaveData(trainingGameSaveLocation2,trainingGameSaveLocationPkl2)
-    informUserGameSave(verifySaved=verifySaved2 )
-
-    # Delete data after saved
-    del player,targetBox,gameEngine_trial2, clock, player_list,debugger,cursorPredictor 
-
-    initiateUserConfirmToProceed(forBreak=True)
 
 
+if __name__ == "__main__":
+    
+    # Create the working directory
+    working_directory_path = os.path.join(os.getcwd(), saveDirectory)
+   
+    # Check if directory already exists
+    if not os.path.exists(working_directory_path):
+       # Make the directory 
+       os.makedirs(working_directory_path)
 
-    # ---- TRAINING TRIAL 3
-    print("--- RUNNING TRAINING TRIAL 3 --- DURATION: 2 MINUTES --- \n")
+    if runPostExperimentalAnalysisOnly == False:
 
-    # Set Game 3 save Locations
-    trainingGameSaveLocation3 = saveGameLocation + "_training3.npz"
-    trainingGameSaveLocationPkl3 = saveGameLocation + "_training3.pkl"
+        # --- Phase 1: 4 training trials, each 3 minutes ---
+        # ---- TRAINING TRIAL 1
+        print("--- RUNNING TRAINING TRIAL 1 --- DURATION: 2 MINUTES --- \n")
 
-    initiateUserConfirmToProceed()
-    gameEngine_trial3 = gameEngine
-    gameEngine_trial3 = configureForTrainingSetup(gameEngine=gameEngine_trial3,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation3,saveLocationPkl=trainingGameSaveLocationPkl3)
-    player,targetBox,gameEngine_trial3, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial3)
-    runGame(gameEngine=gameEngine_trial3, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+        # Set Game 1 save Locations
+        trainingGameSaveLocation1 = saveGameLocation + "_training1.npz"
+        trainingGameSaveLocationPkl1 = saveGameLocation + "_training1.pkl"
 
-    # check if data saved an inform user if game has not saved
-    verifySaved3 = verifyGameSaveData(trainingGameSaveLocation3,trainingGameSaveLocationPkl3)
-    informUserGameSave(verifySaved=verifySaved3 )
+        initiateUserConfirmToProceed()
+        gameEngine_trial1 = gameEngine
+        gameEngine_trial1 = configureForTrainingSetup(gameEngine=gameEngine_trial1,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation1,saveLocationPkl=trainingGameSaveLocationPkl1)
+        player,targetBox,gameEngine_trial1, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial1)
+        runGame(gameEngine=gameEngine_trial1, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
 
-    # Delete data after saved
-    del player,targetBox,gameEngine_trial3, clock, player_list,debugger,cursorPredictor 
+        # check if data saved an inform user if game has not saved
+        verifySaved1 = verifyGameSaveData(trainingGameSaveLocation1,trainingGameSaveLocationPkl1)
+        informUserGameSave(verifySaved=verifySaved1)
 
-    initiateUserConfirmToProceed(forBreak=True)
+        # Delete data after saved
+        del player,targetBox,gameEngine_trial1, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+        # ---- TRAINING TRIAL 2
+        print("--- RUNNING TRAINING TRIAL 2 --- DURATION: 2 MINUTES --- \n")
+
+        # Set Game 2 save Locations
+        trainingGameSaveLocation2 = saveGameLocation + "_training2.npz"
+        trainingGameSaveLocationPkl2 = saveGameLocation + "_training2.pkl"
+
+        initiateUserConfirmToProceed()
+        gameEngine_trial2 = gameEngine
+        gameEngine_trial2 = configureForTrainingSetup(gameEngine=gameEngine_trial2,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation2,saveLocationPkl=trainingGameSaveLocationPkl2)
+        player,targetBox,gameEngine_trial2, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial2)
+        runGame(gameEngine=gameEngine_trial2, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved2 = verifyGameSaveData(trainingGameSaveLocation2,trainingGameSaveLocationPkl2)
+        informUserGameSave(verifySaved=verifySaved2 )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_trial2, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
 
 
-    # ---- TRAINING TRIAL 4
-    print("--- RUNNING TRAINING TRIAL 4 --- DURATION: 2 MINUTES --- \n")
 
-    # Set Game 4 save Locations
-    trainingGameSaveLocation4 = saveGameLocation + "_training4.npz"
-    trainingGameSaveLocationPkl4 = saveGameLocation + "_training4.pkl"
+        # ---- TRAINING TRIAL 3
+        print("--- RUNNING TRAINING TRIAL 3 --- DURATION: 2 MINUTES --- \n")
 
-    initiateUserConfirmToProceed()
-    gameEngine_trial4 = gameEngine
-    gameEngine_trial4 = configureForTrainingSetup(gameEngine=gameEngine_trial4,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation4,saveLocationPkl=trainingGameSaveLocationPkl4)
-    player,targetBox,gameEngine_trial4, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial4)
-    runGame(gameEngine=gameEngine_trial4, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+        # Set Game 3 save Locations
+        trainingGameSaveLocation3 = saveGameLocation + "_training3.npz"
+        trainingGameSaveLocationPkl3 = saveGameLocation + "_training3.pkl"
 
-    # check if data saved an inform user if game has not saved
-    verifySaved4 = verifyGameSaveData(trainingGameSaveLocation4,trainingGameSaveLocationPkl4)
-    informUserGameSave(verifySaved=verifySaved4 )
+        initiateUserConfirmToProceed()
+        gameEngine_trial3 = gameEngine
+        gameEngine_trial3 = configureForTrainingSetup(gameEngine=gameEngine_trial3,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation3,saveLocationPkl=trainingGameSaveLocationPkl3)
+        player,targetBox,gameEngine_trial3, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial3)
+        runGame(gameEngine=gameEngine_trial3, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
 
-    # Delete data after saved
-    del player,targetBox,gameEngine_trial4, clock, player_list,debugger,cursorPredictor 
+        # check if data saved an inform user if game has not saved
+        verifySaved3 = verifyGameSaveData(trainingGameSaveLocation3,trainingGameSaveLocationPkl3)
+        informUserGameSave(verifySaved=verifySaved3 )
 
-    initiateUserConfirmToProceed(forBreak=True)
+        # Delete data after saved
+        del player,targetBox,gameEngine_trial3, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
 
 
-    # ---- TEST TRIAL 
-    print("--- RUNNING TEST TRIAL --- DURATION: 2 MINUTES --- \n")
+        # ---- TRAINING TRIAL 4
+        print("--- RUNNING TRAINING TRIAL 4 --- DURATION: 2 MINUTES --- \n")
 
-    # Set Test game save Locations
-    testGameSaveLocation = saveGameLocation + "_test.npz"
-    testGameSaveLocationPkl = saveGameLocation + "_test.pkl"
+        # Set Game 4 save Locations
+        trainingGameSaveLocation4 = saveGameLocation + "_training4.npz"
+        trainingGameSaveLocationPkl4 = saveGameLocation + "_training4.pkl"
 
-    initiateUserConfirmToProceed()
-    gameEngine_testTrial = gameEngine
-    gameEngine_testTrial = configureForTrainingSetup(gameEngine=gameEngine_testTrial,worldx=worldx,worldy=worldy,fps=fps,saveLocation=testGameSaveLocation,saveLocationPkl=testGameSaveLocationPkl)
-    player,targetBox,gameEngine_testTrial, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_testTrial)
-    runGame(gameEngine=gameEngine_testTrial, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+        initiateUserConfirmToProceed()
+        gameEngine_trial4 = gameEngine
+        gameEngine_trial4 = configureForTrainingSetup(gameEngine=gameEngine_trial4,worldx=worldx,worldy=worldy,fps=fps,saveLocation=trainingGameSaveLocation4,saveLocationPkl=trainingGameSaveLocationPkl4)
+        player,targetBox,gameEngine_trial4, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_trial4)
+        runGame(gameEngine=gameEngine_trial4, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
 
-    # check if data saved an inform user if game has not saved
-    verifySaved_test = verifyGameSaveData(testGameSaveLocation,testGameSaveLocationPkl)
-    informUserGameSave(verifySaved=verifySaved_test )
+        # check if data saved an inform user if game has not saved
+        verifySaved4 = verifyGameSaveData(trainingGameSaveLocation4,trainingGameSaveLocationPkl4)
+        informUserGameSave(verifySaved=verifySaved4 )
 
-    # Delete data after saved
-    del player,targetBox,gameEngine_testTrial, clock, player_list,debugger,cursorPredictor 
+        # Delete data after saved
+        del player,targetBox,gameEngine_trial4, clock, player_list,debugger,cursorPredictor 
 
-    initiateUserConfirmToProceed(forBreak=True)
+        initiateUserConfirmToProceed(forBreak=True)
 
-    print("--- The initial experimental phase has now been finished ---")
+
+        # ---- TEST TRIAL 
+        print("--- RUNNING TEST TRIAL --- DURATION: 2 MINUTES --- \n")
+
+        # Set Test game save Locations
+        testGameSaveLocation = saveGameLocation + "_test.npz"
+        testGameSaveLocationPkl = saveGameLocation + "_test.pkl"
+
+        initiateUserConfirmToProceed()
+        gameEngine_testTrial = gameEngine
+        gameEngine_testTrial = configureForTrainingSetup(gameEngine=gameEngine_testTrial,worldx=worldx,worldy=worldy,fps=fps,saveLocation=testGameSaveLocation,saveLocationPkl=testGameSaveLocationPkl)
+        player,targetBox,gameEngine_testTrial, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_testTrial)
+        runGame(gameEngine=gameEngine_testTrial, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved_test = verifyGameSaveData(testGameSaveLocation,testGameSaveLocationPkl)
+        informUserGameSave(verifySaved=verifySaved_test )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_testTrial, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+        print("--- The initial experimental phase has now been finished ---")
+
+        """
+        --- END OF PHASE 1 ----
+        """
+
+        # 
+        # 
+        """
+        Phase 2 - train decoders
+        """
+
+
+
+        # # E : Linear : 0.1 :ignore > 0, angles only
+        angularInfoDictE = fitModelToData(mode = 'RigidBodiesSetE',tester = 'linear', \
+        compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+
+        np.savez(saveGameLocation + '_linearRigidBodyEModel.npz', modelCoeff = angularInfoDictE['Coeff'],modelIntercept = angularInfoDictE['Intercept'],minDOF = angularInfoDictE['MinDOF'],
+                maxDOF = angularInfoDictE['MaxDOF'], DOFOffset = angularInfoDictE['DOFOffset'], predCursorPos = angularInfoDictE['PredCursorPos'])
+
+
+        # # F : Linear : 0.1 :ignore > 0, angles only
+        angularInfoDictF = fitModelToData(mode = 'RigidBodiesSetF',tester = 'linear', \
+        compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+
+        np.savez(saveGameLocation + '_linearRigidBodyFModel.npz', modelCoeff = angularInfoDictF['Coeff'],modelIntercept = angularInfoDictF['Intercept'],minDOF = angularInfoDictF['MinDOF'],
+                maxDOF = angularInfoDictF['MaxDOF'], DOFOffset = angularInfoDictF['DOFOffset'], predCursorPos = angularInfoDictF['PredCursorPos'])
+
+
+        # # G : Linear : 0.1 :ignore > 0, angles only
+        angularInfoDictG = fitModelToData(mode = 'RigidBodiesSetG',tester = 'linear', \
+        compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+
+        np.savez(saveGameLocation + '_linearRigidBodyGModel.npz', modelCoeff = angularInfoDictG['Coeff'],modelIntercept = angularInfoDictG['Intercept'],minDOF = angularInfoDictG['MinDOF'],
+                maxDOF = angularInfoDictG['MaxDOF'], DOFOffset = angularInfoDictG['DOFOffset'], predCursorPos = angularInfoDictG['PredCursorPos'])
+
+        # # H : Linear : 0.1 :ignore > 0, angles only
+        angularInfoDictH = fitModelToData(mode = 'RigidBodiesSetH',tester = 'linear', \
+        compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+
+        np.savez(saveGameLocation + '_linearRigidBodyHModel.npz', modelCoeff = angularInfoDictH['Coeff'],modelIntercept = angularInfoDictH['Intercept'],minDOF = angularInfoDictH['MinDOF'],
+                maxDOF = angularInfoDictH['MaxDOF'], DOFOffset = angularInfoDictH['DOFOffset'], predCursorPos = angularInfoDictH['PredCursorPos'])
+
+        # # I : Linear : 0.1 :ignore > 0, angles only
+        angularInfoDictI = fitModelToData(mode = 'RigidBodiesSetI',tester = 'linear', \
+        compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+
+        np.savez(saveGameLocation + '_linearRigidBodyIModel.npz', modelCoeff = angularInfoDictI['Coeff'],modelIntercept = angularInfoDictI['Intercept'],minDOF = angularInfoDictI['MinDOF'],
+                maxDOF = angularInfoDictI['MaxDOF'], DOFOffset = angularInfoDictI['DOFOffset'], predCursorPos = angularInfoDictI['PredCursorPos'])
+
+        # # J : Linear : 0.1 :ignore > 0, angles only
+        angularInfoDictJ = fitModelToData(mode = 'RigidBodiesSetJ',tester = 'linear', \
+        compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+
+        np.savez(saveGameLocation + '_linearRigidBodyJModel.npz', modelCoeff = angularInfoDictJ['Coeff'],modelIntercept = angularInfoDictJ['Intercept'],minDOF = angularInfoDictJ['MinDOF'],
+                maxDOF = angularInfoDictJ['MaxDOF'], DOFOffset = angularInfoDictJ['DOFOffset'], predCursorPos = angularInfoDictJ['PredCursorPos'])
+
+
+
+
+
+
+
+        """
+        END OF PHASE 2
+
+        """
+
+        """
+        PHASE 3: Testing decoders in the closed loop
+        # """
+        print("--- PHASE 3: Testing out decoders in the closed loop ---")
+
+        # # --- Decoder E ---
+        print("--- RUNNING DECODER TRIAL E --- DURATION: 3 MINUTES --- \n")
+
+        # Set Test game save Locations
+        decoderESaveLocation = saveGameLocation + "_usingDecoderE.npz"
+        decoderESaveLocationPkl = saveGameLocation + "_usingDecoderE.pkl"
+        decoderEMdlLocation = saveGameLocation + '_linearRigidBodyEModel.npz'
+
+        initiateUserConfirmToProceed()
+        gameEngine_decoderE = gameEngine
+        gameEngine_decoderE = configureForDecoder(gameEngine=gameEngine_decoderE,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderESaveLocation,
+                        saveLocationPkl=decoderESaveLocationPkl,decoder= 'E', decoderLocation = decoderEMdlLocation)
+
+        player,targetBox,gameEngine_decoderE, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderE)
+        runGame(gameEngine=gameEngine_decoderE, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved_decoderE = verifyGameSaveData(decoderESaveLocation,decoderESaveLocationPkl)
+        informUserGameSave(verifySaved=verifySaved_decoderE )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_decoderE, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+
+        # --- Decoder F ---
+        print("--- RUNNING DECODER TRIAL F --- DURATION: 3 MINUTES --- \n")
+
+        # Set Test game save Locations
+        decoderFSaveLocation = saveGameLocation + "_usingDecoderF.npz"
+        decoderFSaveLocationPkl = saveGameLocation + "_usingDecoderF.pkl"
+        decoderFMdlLocation = saveGameLocation + '_linearRigidBodyFModel.npz'
+
+        initiateUserConfirmToProceed()
+        gameEngine_decoderF = gameEngine
+        gameEngine_decoderF = configureForDecoder(gameEngine=gameEngine_decoderF,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderFSaveLocation,
+                        saveLocationPkl=decoderFSaveLocationPkl,decoder= 'F', decoderLocation = decoderFMdlLocation)
+
+        player,targetBox,gameEngine_decoderF, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderF)
+        runGame(gameEngine=gameEngine_decoderF, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved_decoderF = verifyGameSaveData(decoderFSaveLocation,decoderFSaveLocationPkl)
+        informUserGameSave(verifySaved=verifySaved_decoderF )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_decoderF, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+
+        # --- Decoder G ---
+        print("--- RUNNING DECODER TRIAL G --- DURATION: 2 MINUTES --- \n")
+
+        # Set Test game save Locations
+        decoderGSaveLocation = saveGameLocation + "_usingDecoderG.npz"
+        decoderGSaveLocationPkl = saveGameLocation + "_usingDecoderG.pkl"
+        decoderGMdlLocation = saveGameLocation + '_linearRigidBodyGModel.npz'
+
+        initiateUserConfirmToProceed()
+        gameEngine_decoderG = gameEngine
+        gameEngine_decoderG = configureForDecoder(gameEngine=gameEngine_decoderG,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderGSaveLocation,
+                        saveLocationPkl=decoderGSaveLocationPkl,decoder= 'G', decoderLocation = decoderGMdlLocation)
+
+        player,targetBox,gameEngine_decoderG, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderG)
+        runGame(gameEngine=gameEngine_decoderG, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved_decoderG = verifyGameSaveData(decoderGSaveLocation,decoderGSaveLocationPkl)
+        informUserGameSave(verifySaved=verifySaved_decoderG )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_decoderG, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+
+        # --- Decoder H ---
+        print("--- RUNNING DECODER TRIAL H --- DURATION: 3 MINUTES --- \n")
+
+        # Set Test game save Locations
+        decoderHSaveLocation = saveGameLocation + "_usingDecoderH.npz"
+        decoderHSaveLocationPkl = saveGameLocation + "_usingDecoderH.pkl"
+        decoderHMdlLocation = saveGameLocation + '_linearRigidBodyHModel.npz'
+
+        initiateUserConfirmToProceed()
+        gameEngine_decoderH = gameEngine
+        gameEngine_decoderH = configureForDecoder(gameEngine=gameEngine_decoderH,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderHSaveLocation,
+                        saveLocationPkl=decoderHSaveLocationPkl,decoder= 'H', decoderLocation = decoderHMdlLocation)
+
+        player,targetBox,gameEngine_decoderH, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderH)
+        runGame(gameEngine=gameEngine_decoderH, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved_decoderH = verifyGameSaveData(decoderHSaveLocation,decoderHSaveLocationPkl)
+        informUserGameSave(verifySaved=verifySaved_decoderH )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_decoderH, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+        # --- Decoder I ---
+        print("--- RUNNING DECODER TRIAL I --- DURATION: 3 MINUTES --- \n")
+
+        # Set Test game save Locations
+        decoderISaveLocation = saveGameLocation + "_usingDecoderI.npz"
+        decoderISaveLocationPkl = saveGameLocation + "_usingDecoderI.pkl"
+        decoderIMdlLocation = saveGameLocation + '_linearRigidBodyIModel.npz'
+
+        initiateUserConfirmToProceed()
+        gameEngine_decoderI = gameEngine
+        gameEngine_decoderI = configureForDecoder(gameEngine=gameEngine_decoderI,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderISaveLocation,
+                        saveLocationPkl=decoderISaveLocationPkl,decoder= 'I', decoderLocation = decoderIMdlLocation)
+
+        player,targetBox,gameEngine_decoderI, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderI)
+        runGame(gameEngine=gameEngine_decoderI, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved_decoderI = verifyGameSaveData(decoderISaveLocation,decoderISaveLocationPkl)
+        informUserGameSave(verifySaved=verifySaved_decoderI )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_decoderI, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+        # --- Decoder J ---
+        print("--- RUNNING DECODER TRIAL J --- DURATION: 3 MINUTES --- \n")
+
+        # Set Test game save Locations
+        decoderJSaveLocation = saveGameLocation + "_usingDecoderJ.npz"
+        decoderJSaveLocationPkl = saveGameLocation + "_usingDecoderJ.pkl"
+        decoderJMdlLocation = saveGameLocation + '_linearRigidBodyJModel.npz'
+
+        initiateUserConfirmToProceed()
+        gameEngine_decoderJ = gameEngine
+        gameEngine_decoderJ = configureForDecoder(gameEngine=gameEngine_decoderJ,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderJSaveLocation,
+                        saveLocationPkl=decoderJSaveLocationPkl,decoder= 'J', decoderLocation = decoderJMdlLocation)
+
+        player,targetBox,gameEngine_decoderJ, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderJ)
+        runGame(gameEngine=gameEngine_decoderJ, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
+
+        # check if data saved an inform user if game has not saved
+        verifySaved_decoderJ = verifyGameSaveData(decoderJSaveLocation,decoderJSaveLocationPkl)
+        informUserGameSave(verifySaved=verifySaved_decoderJ )
+
+        # Delete data after saved
+        del player,targetBox,gameEngine_decoderJ, clock, player_list,debugger,cursorPredictor 
+
+        initiateUserConfirmToProceed(forBreak=True)
+
+
+    
+
+        """
+        PHASE 3 END
+        """
+
+
 
     """
-    --- END OF PHASE 1 ----
+        PHASE 4: Post data analysis 
+    """
+    print("--- PHASE 4: Data Analytics ---")
+
+    print("No further experimentation is needed for this experiment")
+
+    print("Preparing to process data")
+
+    """
+    Run the open loop analysis notebook
     """
 
-    # 
-    # 
-"""
-Phase 2 - train decoders
-"""
+    print("Analysing data in open loop conditions")
 
+    # Set notebook paths
+    notebookInputPath = 'Experiment_pointer/DataAnalysis/OPENLOOPpostExperimentDataProcessing.ipynb'
+    notebookOutputPath = saveGameLocation + 'Analysis-openLoopPostExperimentDataProcessing.ipynb'
 
+    analyseNotebook(notebookInputPath,notebookOutputPath)
 
-# # E : Linear : 0.1 :ignore > 0, angles only
-angularInfoDictE = fitModelToData(mode = 'RigidBodiesSetE',tester = 'linear', \
-compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+    print("Open Loop Analysis completed.")
 
-np.savez(saveGameLocation + '_linearRigidBodyEModel.npz', modelCoeff = angularInfoDictE['Coeff'],modelIntercept = angularInfoDictE['Intercept'],minDOF = angularInfoDictE['MinDOF'],
-        maxDOF = angularInfoDictE['MaxDOF'], DOFOffset = angularInfoDictE['DOFOffset'], predCursorPos = angularInfoDictE['PredCursorPos'])
 
+    """
+    Run the closed loop analysis notebook
+    """
 
-# # F : Linear : 0.1 :ignore > 0, angles only
-angularInfoDictF = fitModelToData(mode = 'RigidBodiesSetF',tester = 'linear', \
-compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+    print("Analysing data in closed loop conditions")
 
-np.savez(saveGameLocation + '_linearRigidBodyFModel.npz', modelCoeff = angularInfoDictF['Coeff'],modelIntercept = angularInfoDictF['Intercept'],minDOF = angularInfoDictF['MinDOF'],
-        maxDOF = angularInfoDictF['MaxDOF'], DOFOffset = angularInfoDictF['DOFOffset'], predCursorPos = angularInfoDictF['PredCursorPos'])
+    # Set notebook paths
+    notebookInputPath = 'Experiment_pointer/DataAnalysis/CLOSEDLOOPpostDecoderAnalysis.ipynb'
+    notebookOutputPath = saveGameLocation + 'Analysis-closedLoopPostDecoderAnalysis.ipynb'
 
+    analyseNotebook(notebookInputPath,notebookOutputPath)
 
-# # G : Linear : 0.1 :ignore > 0, angles only
-angularInfoDictG = fitModelToData(mode = 'RigidBodiesSetG',tester = 'linear', \
-compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+    print("Closed Loop Analysis completed.")
 
-np.savez(saveGameLocation + '_linearRigidBodyGModel.npz', modelCoeff = angularInfoDictG['Coeff'],modelIntercept = angularInfoDictG['Intercept'],minDOF = angularInfoDictG['MinDOF'],
-        maxDOF = angularInfoDictG['MaxDOF'], DOFOffset = angularInfoDictG['DOFOffset'], predCursorPos = angularInfoDictG['PredCursorPos'])
+    """
+    Run the open loop analysis notebook
+    """
 
-# # H : Linear : 0.1 :ignore > 0, angles only
-angularInfoDictH = fitModelToData(mode = 'RigidBodiesSetH',tester = 'linear', \
-compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+    print("Analysing variability of data")
 
-np.savez(saveGameLocation + '_linearRigidBodyHModel.npz', modelCoeff = angularInfoDictH['Coeff'],modelIntercept = angularInfoDictH['Intercept'],minDOF = angularInfoDictH['MinDOF'],
-        maxDOF = angularInfoDictH['MaxDOF'], DOFOffset = angularInfoDictH['DOFOffset'], predCursorPos = angularInfoDictH['PredCursorPos'])
+    # Set notebook paths
+    notebookInputPath = 'Experiment_pointer/DataAnalysis/VARIABILITYtrackRigidBodyVariability.ipynb'
+    notebookOutputPath = saveGameLocation + 'Analysis-variabilityTrackRigidBodyVariability.ipynb'
 
-# # I : Linear : 0.1 :ignore > 0, angles only
-angularInfoDictI = fitModelToData(mode = 'RigidBodiesSetI',tester = 'linear', \
-compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+    analyseNotebook(notebookInputPath,notebookOutputPath)
 
-np.savez(saveGameLocation + '_linearRigidBodyIModel.npz', modelCoeff = angularInfoDictI['Coeff'],modelIntercept = angularInfoDictI['Intercept'],minDOF = angularInfoDictI['MinDOF'],
-        maxDOF = angularInfoDictI['MaxDOF'], DOFOffset = angularInfoDictI['DOFOffset'], predCursorPos = angularInfoDictI['PredCursorPos'])
+    print("Variability Analysis completed.")
 
-# # J : Linear : 0.1 :ignore > 0, angles only
-angularInfoDictJ = fitModelToData(mode = 'RigidBodiesSetJ',tester = 'linear', \
-compPca = None, savePath=saveGameLocation,colorMap=colorMap,plot=False,DOFOffset= 0.1,ignoreTargetMotionTimesLessThan=0)
+    print("Experimental protocol has concluded")
+    
+    
 
-np.savez(saveGameLocation + '_linearRigidBodyJModel.npz', modelCoeff = angularInfoDictJ['Coeff'],modelIntercept = angularInfoDictJ['Intercept'],minDOF = angularInfoDictJ['MinDOF'],
-        maxDOF = angularInfoDictJ['MaxDOF'], DOFOffset = angularInfoDictJ['DOFOffset'], predCursorPos = angularInfoDictJ['PredCursorPos'])
-
-
-
-
-
-
-
-"""
-END OF PHASE 2
-
-"""
-
-"""
-PHASE 3: Testing decoders in the closed loop
-# """
-print("--- PHASE 3: Testing out decoders in the closed loop ---")
-
-# # --- Decoder E ---
-print("--- RUNNING DECODER TRIAL E --- DURATION: 3 MINUTES --- \n")
-
-# Set Test game save Locations
-decoderESaveLocation = saveGameLocation + "_usingDecoderE.npz"
-decoderESaveLocationPkl = saveGameLocation + "_usingDecoderE.pkl"
-decoderEMdlLocation = saveGameLocation + '_linearRigidBodyEModel.npz'
-
-initiateUserConfirmToProceed()
-gameEngine_decoderE = gameEngine
-gameEngine_decoderE = configureForDecoder(gameEngine=gameEngine_decoderE,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderESaveLocation,
-                saveLocationPkl=decoderESaveLocationPkl,decoder= 'E', decoderLocation = decoderEMdlLocation)
-
-player,targetBox,gameEngine_decoderE, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderE)
-runGame(gameEngine=gameEngine_decoderE, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-# check if data saved an inform user if game has not saved
-verifySaved_decoderE = verifyGameSaveData(decoderESaveLocation,decoderESaveLocationPkl)
-informUserGameSave(verifySaved=verifySaved_decoderE )
-
-# Delete data after saved
-del player,targetBox,gameEngine_decoderE, clock, player_list,debugger,cursorPredictor 
-
-initiateUserConfirmToProceed(forBreak=True)
-
-
-# --- Decoder F ---
-print("--- RUNNING DECODER TRIAL F --- DURATION: 3 MINUTES --- \n")
-
-# Set Test game save Locations
-decoderFSaveLocation = saveGameLocation + "_usingDecoderF.npz"
-decoderFSaveLocationPkl = saveGameLocation + "_usingDecoderF.pkl"
-decoderFMdlLocation = saveGameLocation + '_linearRigidBodyFModel.npz'
-
-initiateUserConfirmToProceed()
-gameEngine_decoderF = gameEngine
-gameEngine_decoderF = configureForDecoder(gameEngine=gameEngine_decoderF,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderFSaveLocation,
-                saveLocationPkl=decoderFSaveLocationPkl,decoder= 'F', decoderLocation = decoderFMdlLocation)
-
-player,targetBox,gameEngine_decoderF, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderF)
-runGame(gameEngine=gameEngine_decoderF, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-# check if data saved an inform user if game has not saved
-verifySaved_decoderF = verifyGameSaveData(decoderFSaveLocation,decoderFSaveLocationPkl)
-informUserGameSave(verifySaved=verifySaved_decoderF )
-
-# Delete data after saved
-del player,targetBox,gameEngine_decoderF, clock, player_list,debugger,cursorPredictor 
-
-initiateUserConfirmToProceed(forBreak=True)
-
-
-# --- Decoder G ---
-print("--- RUNNING DECODER TRIAL G --- DURATION: 3 MINUTES --- \n")
-
-# Set Test game save Locations
-decoderGSaveLocation = saveGameLocation + "_usingDecoderG.npz"
-decoderGSaveLocationPkl = saveGameLocation + "_usingDecoderG.pkl"
-decoderGMdlLocation = saveGameLocation + '_linearRigidBodyGModel.npz'
-
-initiateUserConfirmToProceed()
-gameEngine_decoderG = gameEngine
-gameEngine_decoderG = configureForDecoder(gameEngine=gameEngine_decoderG,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderGSaveLocation,
-                saveLocationPkl=decoderGSaveLocationPkl,decoder= 'G', decoderLocation = decoderGMdlLocation)
-
-player,targetBox,gameEngine_decoderG, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderG)
-runGame(gameEngine=gameEngine_decoderG, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-# check if data saved an inform user if game has not saved
-verifySaved_decoderG = verifyGameSaveData(decoderGSaveLocation,decoderGSaveLocationPkl)
-informUserGameSave(verifySaved=verifySaved_decoderG )
-
-# Delete data after saved
-del player,targetBox,gameEngine_decoderG, clock, player_list,debugger,cursorPredictor 
-
-initiateUserConfirmToProceed(forBreak=True)
-
-
-# --- Decoder H ---
-print("--- RUNNING DECODER TRIAL H --- DURATION: 3 MINUTES --- \n")
-
-# Set Test game save Locations
-decoderHSaveLocation = saveGameLocation + "_usingDecoderH.npz"
-decoderHSaveLocationPkl = saveGameLocation + "_usingDecoderH.pkl"
-decoderHMdlLocation = saveGameLocation + '_linearRigidBodyHModel.npz'
-
-initiateUserConfirmToProceed()
-gameEngine_decoderH = gameEngine
-gameEngine_decoderH = configureForDecoder(gameEngine=gameEngine_decoderH,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderHSaveLocation,
-                saveLocationPkl=decoderHSaveLocationPkl,decoder= 'H', decoderLocation = decoderHMdlLocation)
-
-player,targetBox,gameEngine_decoderH, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderH)
-runGame(gameEngine=gameEngine_decoderH, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-# check if data saved an inform user if game has not saved
-verifySaved_decoderH = verifyGameSaveData(decoderHSaveLocation,decoderHSaveLocationPkl)
-informUserGameSave(verifySaved=verifySaved_decoderH )
-
-# Delete data after saved
-del player,targetBox,gameEngine_decoderH, clock, player_list,debugger,cursorPredictor 
-
-initiateUserConfirmToProceed(forBreak=True)
-
-# --- Decoder I ---
-print("--- RUNNING DECODER TRIAL I --- DURATION: 3 MINUTES --- \n")
-
-# Set Test game save Locations
-decoderISaveLocation = saveGameLocation + "_usingDecoderI.npz"
-decoderISaveLocationPkl = saveGameLocation + "_usingDecoderI.pkl"
-decoderIMdlLocation = saveGameLocation + '_linearRigidBodyIModel.npz'
-
-initiateUserConfirmToProceed()
-gameEngine_decoderI = gameEngine
-gameEngine_decoderI = configureForDecoder(gameEngine=gameEngine_decoderI,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderISaveLocation,
-                saveLocationPkl=decoderISaveLocationPkl,decoder= 'I', decoderLocation = decoderIMdlLocation)
-
-player,targetBox,gameEngine_decoderI, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderI)
-runGame(gameEngine=gameEngine_decoderI, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-# check if data saved an inform user if game has not saved
-verifySaved_decoderI = verifyGameSaveData(decoderISaveLocation,decoderISaveLocationPkl)
-informUserGameSave(verifySaved=verifySaved_decoderI )
-
-# Delete data after saved
-del player,targetBox,gameEngine_decoderI, clock, player_list,debugger,cursorPredictor 
-
-initiateUserConfirmToProceed(forBreak=True)
-
-# --- Decoder J ---
-print("--- RUNNING DECODER TRIAL J --- DURATION: 3 MINUTES --- \n")
-
-# Set Test game save Locations
-decoderJSaveLocation = saveGameLocation + "_usingDecoderJ.npz"
-decoderJSaveLocationPkl = saveGameLocation + "_usingDecoderJ.pkl"
-decoderJMdlLocation = saveGameLocation + '_linearRigidBodyJModel.npz'
-
-initiateUserConfirmToProceed()
-gameEngine_decoderJ = gameEngine
-gameEngine_decoderJ = configureForDecoder(gameEngine=gameEngine_decoderJ,worldx=worldx,worldy=worldy,fps=fps,saveLocation=decoderJSaveLocation,
-                saveLocationPkl=decoderJSaveLocationPkl,decoder= 'J', decoderLocation = decoderJMdlLocation)
-
-player,targetBox,gameEngine_decoderJ, clock, player_list,debugger,cursorPredictor =runSetup(gameEngine=gameEngine_decoderJ)
-runGame(gameEngine=gameEngine_decoderJ, player = player,debugger = debugger, targetBox = targetBox,player_list=player_list,clock = clock)
-
-# check if data saved an inform user if game has not saved
-verifySaved_decoderJ = verifyGameSaveData(decoderJSaveLocation,decoderJSaveLocationPkl)
-informUserGameSave(verifySaved=verifySaved_decoderJ )
-
-# Delete data after saved
-del player,targetBox,gameEngine_decoderJ, clock, player_list,debugger,cursorPredictor 
-
-initiateUserConfirmToProceed(forBreak=True)
-
-
-print("Experimental protocol has concluded")
-
-"""
-PHASE 3 END
-"""
-
-
-
-"""
-    PHASE 4: Post data analysis 
-"""
-print("--- PHASE 4: Testing out decoders in the closed loop ---")

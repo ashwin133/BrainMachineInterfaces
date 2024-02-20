@@ -44,19 +44,24 @@ def runSetup(gameEngine):
 
     clock = pygame.time.Clock()
     pygame.init()
-    gameEngine.world = pygame.display.set_mode([gameEngine.worldx,gameEngine.worldy],pygame.DOUBLEBUF) # this is the surface
+    gameEngine.world = pygame.display.set_mode([gameEngine.worldx,gameEngine.worldy],pygame.DOUBLEBUF,display=0) # this is the surface
     gameEngine.targetStartTime = 100000
     targetBox = Box(gameEngine.leftCornerXBoxLoc,gameEngine.leftCornerYBoxLoc,gameEngine.boxWidth,gameEngine.boxHeight,gameEngine.colours['RED'],debugger)
     
-
-    player = Player(targetBox,gameEngine.colours, gameEngine.targetStartTime,gameEngine.worldx,gameEngine.worldy,debugger)   # spawn player
+    pointsMax = 1000
+    player = Player(targetBox,gameEngine.colours, gameEngine.targetStartTime,gameEngine.worldx,gameEngine.worldy,debugger,timeLimitTargets= gameEngine.timeLimitTargets,timeLimit = gameEngine.timeLimit)   # spawn player
+    gameEngine.red_bar = RedBar(gameEngine.worldx, 20, gameEngine.timeProgram,gameEngine.colours["RED"],gameEngine.colours['BLACK'],gameEngine.fps,maxScore = gameEngine.maxScoreMultiplier * pointsMax ) 
     
+    # score
+    player.score = 0
+    player.scoreUpdates = [0]
+    player.scoreUpdateTimes = [0]
     # Set ability for player to use rotation of control body instead of position
     if gameEngine.useRotation:
         player.useRotation = True
     else:
         player.useRotation = False
-
+    
     player.rect.x = gameEngine.worldx // 2   # go to x
     player.rect.y = gameEngine.worldy // 2   # go to y
     # put shared memory in player
@@ -111,7 +116,8 @@ def runSetup(gameEngine):
 
     
 
-
+    # Set incremental score multiplier
+    gameEngine.incrementalScoreMultiplier = gameEngine.maxScoreMultiplier / (gameEngine.timeToReachMaxScoreMultiplier * gameEngine.fps)
 
 
     gameEngine.steps =  4 # speed at which the cursor moves
@@ -125,6 +131,10 @@ def runSetup(gameEngine):
     else:
         gameEngine.targetStartTime = 2000
         player.targetStartTime = 2000
+        player.targetPlaceTime = player.targetStartTime
+        # Initialise ring
+        ring = Ring(center=(targetBox.leftCornerXBoxLoc + gameEngine.boxWidth // 2, targetBox.leftCornerYBoxLoc + gameEngine.boxHeight // 2), radius=20, color=gameEngine.colours['WHITE'], timeToEmpty=gameEngine.timeLimit /1000,fps = gameEngine.fps,startOnTime = gameEngine.targetStartTime )
+        player.ring = ring
 
     if gameEngine.LATENCY_TEST:
         player.latencyTestActivated = True
@@ -148,6 +158,8 @@ def runSetup(gameEngine):
     
     print('111')
 
+    
+
     if gameEngine.showCursorPredictor:
         player_list.add(cursorPredictor)
         print('222')
@@ -166,6 +178,7 @@ def endProgram(gameEngine,player,targetBox,debugger):
             del player.images
             del player.image
             del player.font
+            del player.ring.font
             if os.getcwd() == "/Users/ashwin/Documents/Y4 project Brain Human Interfaces/General 4th year Github repo/BrainMachineInterfaces":
                 if "Experiment_pointer" not in gameEngine.writeDataLocation:
                     os.chdir(os.getcwd() + "/Experiment_pointer")
@@ -180,6 +193,7 @@ def endProgram(gameEngine,player,targetBox,debugger):
                     pickle.dump([gameEngine,player], file)
             except:
                 del player.model
+                
                 with open(gameEngine.writeDataLocationPkl, 'wb') as file:
                     pickle.dump([gameEngine,player], file)
         if debugger.test:

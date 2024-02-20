@@ -11,8 +11,8 @@ sys.path.insert(0,'/Users/ashwin/Documents/Y4 project Brain Human Interfaces/Gen
 from Experiment_pointer.objects import *
 
 #toggle screen size
-worldx = 1100
-worldy = 800
+worldx = 1100 + 800
+worldy = 800 + 225
 
 LATENCY_TEST = False
 
@@ -24,8 +24,9 @@ BLUE = (25, 25, 200)
 BLACK = (23, 23, 23)
 WHITE = (254, 254, 254)
 RED  = (255,0,0)
+ORANGE = (255, 165, 0)
 GREEN = (0,255,0)
-colours = {'BLUE': BLUE , 'BLACK': BLACK, 'WHITE':WHITE, 'RED':RED, 'GREEN':GREEN
+colours = {'BLUE': BLUE , 'BLACK': BLACK, 'WHITE':WHITE, 'RED':RED, 'GREEN':GREEN, 'ORANGE': ORANGE
 
 }
 
@@ -48,14 +49,14 @@ debugMode = True
 timeToReach = None
 
 # DECIDE WHETHER TO READ ONLINE DATA AND WHETHER TO READ OR RECORD DATA
-FETCHDATAFROMREALTIME = True
+FETCHDATAFROMREALTIME = False
 recordData = False
 readData = False
 readRigidBodies = False # turn off if not read data
 readAdjustedRigidBodies = False # turn off if not read data 
 showCursorPredictor = False #turn off if not read data 
 readSharedMemory = False
-readLocation = 'PointerExperimentData/30_01_ash.npz'
+readLocation = 'PointerExperimentData/Ashwin_13_02/Ash_13_02_13_19_usingDecoderG.npz'
 writeDataLocation = 'PointerExperimentData/30_01_ash.npz'
 writeDataLocationPkl = 'PointerExperimentData/30_01_ash.pkl'
 metadataLocation = 'metadata'
@@ -63,9 +64,9 @@ invertXaxis = False  # necessary when facing opposite direction
 metadata = {'MetaData:' 'Pres '
 }
 runDecoderInLoop = False
-decoderType = "D"
+decoderType = "G"
 retrieveCursorDataFromModelFile = False
-modelReadLocation = 'PointerExperimentData/linearRigidBodyDModel.npz'
+modelReadLocation = 'PointerExperimentData/Ashwin_13_02/Ash_13_02_13_19_linearRigidBodyGModel.npz'
 
 
 # Use rotational motion for control 
@@ -102,6 +103,15 @@ processedRigidBodyParts = ['Pelvis', 'Ab', 'Chest', 'Neck', 'Head', 'LShoulder',
                       'LFArm', 'LHand', 'RShoulder', 'RUArm', 'RFArm', 'RHand']
 
 
+
+maxScoreMultiplier = 4
+timeToReachMaxScoreMultiplier = 1
+
+timeLimitTargets = True
+
+# Time to hit targets
+timeLimit = 3500
+
 gameEngine = gameStatistics(worldx,worldy,LATENCY_TEST,fps,ani,colours,main,timeToReach,
                  FETCHDATAFROMREALTIME,recordData,readData,readLocation,writeDataLocation,
                  metadataLocation,metadata,handDataReadVarName,targetBoxReadVarName,
@@ -112,7 +122,8 @@ gameEngine = gameStatistics(worldx,worldy,LATENCY_TEST,fps,ani,colours,main,time
                  readAdjustedRigidBodies,showCursorPredictor,cursorMotionDatastoreLocation,runDecoderInLoop,
                  retrieveCursorDataFromModelFile = retrieveCursorDataFromModelFile,modelReadLocation = modelReadLocation,
                  decoderType = decoderType,writeDataLocationPkl = writeDataLocationPkl,invertXaxis=invertXaxis,
-                 useRotation = useRotation)
+                 useRotation = useRotation, timeLimitTargets = timeLimitTargets, maxScoreMultiplier = maxScoreMultiplier, 
+                 timeToReachMaxScoreMultiplier = timeToReachMaxScoreMultiplier, timeLimit = timeLimit)
 
 
 # FEATURE CONTROL
